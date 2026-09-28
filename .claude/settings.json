@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit(/**)",
+      "Read(/**)",
+      "Bash(uv run:*)",
+      "Bash(uv add:*)",
+      "Bash(uv sync:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Bash(git merge:*)",
+      "Bash(git worktree:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)"
+    ],
+    "deny": [
+      "Bash(git push:*)",
+      "Bash(rm -rf:*)"
+    ]
+  }
+}
