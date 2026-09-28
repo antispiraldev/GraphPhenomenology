@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from model.graph import Graph
-from model.records import OTHER_ANY, SELF_ANY, SELF_TAU, Library, Record, Token, extras, flat, is_alternating
+from model.records import OTHER_ANY, SELF_ANY, SELF_TAU, Library, Record, Token, extras, flat, is_alternating, own_labels
 
 
 def test_random_graph_shape_and_tau(alphabet, cfg, rng):
@@ -50,3 +50,9 @@ def test_flat_extras_alternation():
     assert not is_alternating(())
     assert not is_alternating((SELF_TAU,))
     assert not is_alternating((OTHER_ANY, SELF_ANY))
+
+
+def test_own_labels(alphabet):
+    word = (Token.self_offer(1), Token.other_offer(0), SELF_TAU, OTHER_ANY, Token.self_offer(1), Token.other_offer(5))
+    assert own_labels(word, alphabet) == [1, 2, 3]
+    assert own_labels((SELF_ANY, OTHER_ANY), alphabet) == []

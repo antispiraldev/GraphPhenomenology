@@ -142,7 +142,7 @@ class Library:
         return iter(self._records)
 
 
-# --- flat / extras / is_alternating: G0. The rest: G1 (records) -------------
+# --- flat / extras / is_alternating / own_labels: G0. The rest: G1 (records) -
 
 def flat(record: Record, library: Library) -> tuple[Token, ...]:
     """Recursively expand REF tokens (§3.3). Result contains no REF. (G0)"""
@@ -172,8 +172,14 @@ def is_alternating(tokens: tuple[Token, ...]) -> bool:
 
 def own_labels(flat_tokens: tuple[Token, ...], alphabet: Alphabet) -> list[int]:
     """Labels used by my own moves (§6): σ for SELF_OFFER(σ), complement(σ)
-    for OTHER_OFFER(σ). Sorted, unique. SELF_TAU and wildcards contribute none."""
-    raise NotImplementedError
+    for OTHER_OFFER(σ). Sorted, unique. SELF_TAU and wildcards contribute none. (G0)"""
+    labels = set()
+    for tok in flat_tokens:
+        if tok.kind is TokenKind.SELF_OFFER:
+            labels.add(tok.label)
+        elif tok.kind is TokenKind.OTHER_OFFER:
+            labels.add(alphabet.complement(tok.label))
+    return sorted(labels)
 
 
 def swap_token(token: Token) -> Token:
