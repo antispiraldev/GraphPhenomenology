@@ -142,22 +142,32 @@ class Library:
         return iter(self._records)
 
 
-# --- G1 (records) -----------------------------------------------------------
+# --- flat / extras / is_alternating: G0. The rest: G1 (records) -------------
 
 def flat(record: Record, library: Library) -> tuple[Token, ...]:
-    """Recursively expand REF tokens (§3.3). Result contains no REF."""
-    raise NotImplementedError
+    """Recursively expand REF tokens (§3.3). Result contains no REF. (G0)"""
+    out: list[Token] = []
+    for tok in record.tokens:
+        if tok.kind is TokenKind.REF:
+            out.extend(flat(library[tok.ref], library))
+        else:
+            out.append(tok)
+    return tuple(out)
 
 
 def extras(record: Record) -> tuple[Token, ...]:
-    """§5.6: all tokens at level 1; the tokens after the leading REF otherwise."""
-    raise NotImplementedError
+    """§5.6: all tokens at level 1; the tokens after the leading REF otherwise. (G0)"""
+    if record.tokens and record.tokens[0].kind is TokenKind.REF:
+        return record.tokens[1:]
+    return record.tokens
 
 
 def is_alternating(tokens: tuple[Token, ...]) -> bool:
     """True iff a REF-free word is non-empty, strictly alternates self/other,
-    starts with a self token and ends with an other token."""
-    raise NotImplementedError
+    starts with a self token and ends with an other token. (G0)"""
+    if not tokens or len(tokens) % 2:
+        return False
+    return all(t.is_self if i % 2 == 0 else t.is_other for i, t in enumerate(tokens))
 
 
 def own_labels(flat_tokens: tuple[Token, ...], alphabet: Alphabet) -> list[int]:

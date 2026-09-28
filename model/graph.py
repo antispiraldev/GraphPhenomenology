@@ -1,6 +1,8 @@
 """Agent graph: dense Boolean label matrices over a fixed node budget (spec §3.2, §6).
 
-Frozen signatures; implemented in segment G1 (worktree: graph).
+Graph basics are implemented in G0 because every G1 module depends on them.
+Growth (activate_node, apply_growth, is_monotone) is implemented in G1
+(worktree: graph).
 Dense numpy bool arrays only (N_max <= 256 per §12; sparse is out of scope).
 """
 
@@ -36,24 +38,39 @@ class Graph:
         of active nodes (including u == v) gets an edge per label with
         probability q_edge; add a τ self-loop where a node lacks any τ edge;
         x chosen uniformly among active nodes."""
-        raise NotImplementedError
+        A = np.zeros((alphabet.size, cfg.N_max, cfg.N_max), dtype=bool)
+        n = cfg.N0
+        A[:, :n, :n] = rng.random((alphabet.size, n, n)) < cfg.q_edge
+        no_tau = ~A[alphabet.tau, :n, :n].any(axis=1)
+        idx = np.flatnonzero(no_tau)
+        A[alphabet.tau, idx, idx] = True
+        active = np.zeros(cfg.N_max, dtype=bool)
+        active[:n] = True
+        return cls(A, active, int(rng.integers(n)), alphabet)
 
     @property
     def n_active(self) -> int:
-        raise NotImplementedError
+        return int(self.active.sum())
 
     def available(self, x: int | None = None) -> list[int]:
         """Sorted labels with at least one outgoing edge at x (default: self.x)."""
-        raise NotImplementedError
+        x = self.x if x is None else x
+        return np.flatnonzero(self.A[:, x, :].any(axis=1)).tolist()
 
     def step(self, label: int, rng: np.random.Generator) -> int:
         """Move to a uniformly random successor along `label`; return new x.
         Raises ValueError if the label is unavailable."""
-        raise NotImplementedError
+        succ = np.flatnonzero(self.A[label, self.x])
+        if succ.size == 0:
+            raise ValueError(f"label {label} unavailable at node {self.x}")
+        self.x = int(succ[rng.integers(succ.size)])
+        return self.x
 
     def add_self_loops(self, labels: list[int]) -> None:
         """A[label][v, v] = True at every active node."""
-        raise NotImplementedError
+        idx = np.flatnonzero(self.active)
+        for label in labels:
+            self.A[label, idx, idx] = True
 
     def activate_node(self, anchor: int, label: int) -> int | None:
         """Activate the lowest inactive node v, add anchor → v on `label` and a
@@ -61,7 +78,7 @@ class Graph:
         raise NotImplementedError
 
     def copy(self) -> Graph:
-        raise NotImplementedError
+        return Graph(self.A.copy(), self.active.copy(), self.x, self.alphabet)
 
 
 def apply_growth(
