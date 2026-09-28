@@ -184,12 +184,50 @@ def own_labels(flat_tokens: tuple[Token, ...], alphabet: Alphabet) -> list[int]:
 
 def swap_token(token: Token) -> Token:
     """Perspective swap table (§5.7). Raises on REF."""
-    raise NotImplementedError
+    kind = token.kind
+    if kind is TokenKind.SELF_OFFER:
+        return Token.other_offer(token.label)
+    if kind is TokenKind.SELF_TAU or kind is TokenKind.SELF_ANY:
+        return OTHER_ANY
+    if kind is TokenKind.OTHER_OFFER:
+        return Token.self_offer(token.label)
+    if kind is TokenKind.OTHER_ANY:
+        return SELF_ANY
+    raise ValueError(f"cannot swap {token!r}")
 
 
 def transmit(elder_extras: tuple[Token, ...]) -> tuple[Token, ...]:
     """(SELF_ANY,) + swap(e) + (OTHER_ANY,) (§5.7)."""
-    raise NotImplementedError
+    if not is_alternating(elder_extras):
+        raise ValueError(f"elder extras do not alternate: {elder_extras!r}")
+    return (SELF_ANY,) + tuple(swap_token(t) for t in elder_extras) + (OTHER_ANY,)
+
+
+def _next_record(
+    library: Library,
+    new_extras: tuple[Token, ...],
+    anchor: int,
+    partner_id: int,
+    source: Source,
+) -> Record:
+    """Shared §5.5/§5.6 logic: level, id, leading REF, `other` and saturation."""
+    top = library.top
+    if top is None:
+        tokens, other, saturated = new_extras, None, False
+    else:
+        tokens = (Token.make_ref(top.id),) + new_extras
+        saturated = new_extras == extras(top)
+        other = SELF if saturated else top.id
+    return Record(
+        id=library.next_id,
+        level=library.level + 1,
+        tokens=tokens,
+        anchor=anchor,
+        other=other,
+        partner_id=partner_id,
+        saturated=saturated,
+        source=source,
+    )
 
 
 def make_bootstrap_record(
@@ -200,7 +238,10 @@ def make_bootstrap_record(
     segment_tokens is the encoded joint cycle (level 1) or the extra segment
     (level k+1). Level, id, REF, `other` and saturation are derived from the
     library's current top."""
-    raise NotImplementedError
+    segment_tokens = tuple(segment_tokens)
+    if not is_alternating(segment_tokens):
+        raise ValueError(f"segment does not alternate: {segment_tokens!r}")
+    return _next_record(library, segment_tokens, anchor, partner_id, "bootstrap")
 
 
 def make_elder_record(
@@ -208,4 +249,10 @@ def make_elder_record(
 ) -> Record:
     """Build (not append) the learner's next record by transmission (§5.7).
     elder_record must be the elder's record at level library.level + 1."""
-    raise NotImplementedError
+    if elder_record.level != library.level + 1:
+        raise ValueError(
+            f"elder record level {elder_record.level} != {library.level + 1}"
+        )
+    return _next_record(
+        library, transmit(extras(elder_record)), anchor, partner_id, "elder"
+    )
