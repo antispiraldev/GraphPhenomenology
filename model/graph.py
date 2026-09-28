@@ -12,7 +12,7 @@ import numpy as np
 
 from model.actions import Alphabet
 from model.config import Config
-from model.records import Token
+from model.records import Token, TokenKind, own_labels
 
 
 class Graph:
@@ -75,7 +75,16 @@ class Graph:
     def activate_node(self, anchor: int, label: int) -> int | None:
         """Activate the lowest inactive node v, add anchor → v on `label` and a
         τ self-loop at v. Return v, or None if |V| == N_max."""
-        raise NotImplementedError
+        if not self.active[anchor]:
+            raise ValueError(f"anchor {anchor} is not active")
+        inactive = np.flatnonzero(~self.active)
+        if inactive.size == 0:
+            return None
+        v = int(inactive[0])
+        self.active[v] = True
+        self.A[label, anchor, v] = True
+        self.A[self.alphabet.tau, v, v] = True
+        return v
 
     def copy(self) -> Graph:
         return Graph(self.A.copy(), self.active.copy(), self.x, self.alphabet)
@@ -87,9 +96,25 @@ def apply_growth(
     """§6 growth on unlock. mode 'generalize': activate one node (edge label =
     first own-move label in flat_tokens, else τ), then add self-loops for all
     own_labels at every active node. mode 'none': no-op."""
-    raise NotImplementedError
+    if mode == "none":
+        return
+    if mode != "generalize":
+        raise ValueError(f"unknown growth mode {mode!r}")
+    alphabet = graph.alphabet
+    edge_label = alphabet.tau
+    for tok in flat_tokens:
+        if tok.kind is TokenKind.SELF_OFFER:
+            edge_label = tok.label
+            break
+        if tok.kind is TokenKind.OTHER_OFFER:
+            edge_label = alphabet.complement(tok.label)
+            break
+    graph.activate_node(anchor, edge_label)
+    graph.add_self_loops(own_labels(flat_tokens, alphabet))
 
 
 def is_monotone(before: Graph, after: Graph) -> bool:
     """§11: A(before) <= A(after) elementwise and V(before) ⊆ V(after)."""
-    raise NotImplementedError
+    if before.A.shape != after.A.shape or before.active.shape != after.active.shape:
+        return False
+    return bool(np.all(after.A >= before.A) and np.all(after.active >= before.active))
