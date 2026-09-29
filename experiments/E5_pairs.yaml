@@ -1,0 +1,6 @@
+# E5 (a) — Private languages: fixed pairs. Each mind always meets the same partner.
+# Run with: uv run python -m experiments.E5 run --seeds 30 --workers 3
+N_agents: 20
+contact: pairs
+epochs: 500
+output_dir: outputs

@@ -1,0 +1,6 @@
+# E5 (c) — Private languages: default sparse ER contact graph (p = 0.2), the middle case.
+N_agents: 20
+contact: erdos_renyi
+p_contact: 0.2
+epochs: 500
+output_dir: outputs

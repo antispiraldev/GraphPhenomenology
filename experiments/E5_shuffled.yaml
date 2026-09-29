@@ -1,0 +1,7 @@
+# E5 (b) — Private languages: fully shuffled contact. ER with p_contact = 1 is the
+# complete graph, so the random matching is redrawn over all minds every epoch.
+N_agents: 20
+contact: erdos_renyi
+p_contact: 1.0
+epochs: 500
+output_dir: outputs
