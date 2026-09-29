@@ -308,7 +308,7 @@ Controls have their own graphs. They never write records. "No recognition" means
 | L_max / L_ext | 8 / 6 | max level-1 segment length / max extra length |
 | ρ | 0.5 | reactivity |
 | p_probe / β | 0.3 / 1.0 | probe rate / bias toward higher-level records |
-| θ | 0.3 | contingency threshold |
+| θ | 0.4 | contingency threshold (raised from 0.3 after E0; NOTEBOOK D8) |
 | n_min_total | 15 | minimum offers per window for contingency |
 | mode | "bootstrap" | bootstrap \| elder \| mixed |
 | require_mutual | true | enforce reciprocity |
@@ -345,7 +345,7 @@ Controls have their own graphs. They never write records. "No recognition" means
 - **Isolation:** a single agent with no contact never levels up.
 - **Discreteness:** every level-up increments level by exactly 1.
 - **Composition:** `flat(ℓₖ₊₁) == flat(ℓₖ) + tokens after the REF`.
-- **Controls:** E0 holds statistically (e.g. zero one-sided recognitions of controls in 100 seeds × 500 epochs). A unit test also checks that a mind with `require_mutual = false` *would* level up against another mind in the same setup, so the control test can fail.
+- **Controls:** E0 holds statistically over 100 seeds × 500 epochs: **zero** one-sided recognitions of objects and mirrors (they're excluded by structure), and recordings recognized in **fewer than 1 in 5,000** mind–recording windows. Recordings are excluded only by the contingency statistic, so a finite θ always leaves a chance tail (NOTEBOOK D8). A unit test also checks that a mind with `require_mutual = false` *would* level up against another mind in the same setup, so the control test can fail.
 - **Contingency calibration:** on synthetic traces, an offer-independent responder scores |C| < 0.1 on average and a perfect responder scores C = 1.
 - **Elder transmission:** transmitted records satisfy token alternation and composition, and their REF points into the learner's own library.
 - **Growth:** after each unlock with |V| < N_max, |V| increases by exactly 1.

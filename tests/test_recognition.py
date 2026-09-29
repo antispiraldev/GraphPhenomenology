@@ -171,8 +171,8 @@ def test_contingency_none_and_too_few(alphabet):
     assert not c.holds(Config())
     assert c.holds(Config(n_min_total=10))
     # Below θ.
-    assert not ContingencyResult(0.29, 30, 3).holds(Config())
-    assert ContingencyResult(0.3, 15, 2).holds(Config())
+    assert not ContingencyResult(0.29, 30, 3).holds(Config(theta=0.3))
+    assert ContingencyResult(0.3, 15, 2).holds(Config(theta=0.3))
 
 
 # --- joint cycle --------------------------------------------------------------

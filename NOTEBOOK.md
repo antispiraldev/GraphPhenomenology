@@ -109,6 +109,12 @@ C0 failed at q_edge 0.05 because contingency was computable in only 78% of windo
 
 Observation to follow up in E4: probe success is low (1–3%) and falls with record level.
 
+### D8 — 2026-09-29 — θ = 0.4; recording criterion becomes a rate *(delegated — for user review)*
+From today the user has asked Claude to take the initiative and explain each step in plain language, in material that isn't committed. This is the first decision made that way.
+- **Problem:** E0 at θ = 0.3 recognized recordings in 0.092% of windows. The cause is chance lift with small samples, not a bug. No finite θ reaches exactly zero for recordings.
+- **Decision:** default **θ = 0.4**, which cuts the rate about ninefold (0.010% in E0-θ04) and lowers level ≥2 only slightly (30% vs 32% in C0). The §11 control criterion becomes: objects and mirrors **zero**; recordings **< 1 in 5,000** windows.
+- **Rejected for now:** a significance-based test in place of a fixed θ (more principled, but a spec change and rework). E2 maps the θ trade-off anyway, and we can revisit.
+
 ---
 
 ## Glossary

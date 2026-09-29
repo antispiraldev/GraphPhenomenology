@@ -30,7 +30,7 @@ class Config:
     rho: float = 0.5
     p_probe: float = 0.3
     beta: float = 1.0
-    theta: float = 0.3
+    theta: float = 0.4
     n_min_total: int = 15
     mode: Mode = "bootstrap"
     require_mutual: bool = True
