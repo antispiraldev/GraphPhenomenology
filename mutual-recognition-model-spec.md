@@ -1,4 +1,6 @@
-# Mutual Recognition Graph Model — Specification v0.2
+# Mutual Recognition Graph Model — Specification v0.3
+
+**Changes from v0.2 (v0.3):** grown nodes get a τ exit back to their anchor (§6); without it they were absorbing (NOTEBOOK D9–D10).
 
 **Changes from v0.1:**
 1. Controls are judged by **one-sided recognition** (§5.4), so E0 and E2 can actually fail.
@@ -257,7 +259,7 @@ Composition (§11) holds for transmitted records too, because the REF is i's own
 When a record is written, apply `growth` (default `generalize`):
 
 - **generalize:**
-  1. **New node.** If |V| < N_max, activate one new node v. Add an edge anchor → v labeled with the first own-move label in `flat(record)`, or τ if there is none. Give v a τ self-loop. The record thus opens new territory in the graph.
+  1. **New node.** If |V| < N_max, activate one new node v. Add an edge anchor → v labeled with the first own-move label in `flat(record)`, or τ if there is none. Give v a τ self-loop and a τ exit edge v → anchor. The record thus opens new territory in the graph, and a mind that enters it can walk back out. (v0.3: in v0.2 the grown node had no exit and trapped most developed minds; NOTEBOOK D9–D10.)
   2. **Self-loops.** For every label used by my own moves in `flat(record)`, add a self-loop at every active node, including v: `A[label][u,u] = 1`. That includes σ in `SELF_OFFER(σ)` and complement(σ) in `OTHER_OFFER(σ)`. `SELF_TAU` and the wildcards contribute no label. A learned move then becomes usable anywhere, the tech-tree property, and later probes of this record are always feasible.
 - **none:** the graph is unchanged. Use this for ablation.
 

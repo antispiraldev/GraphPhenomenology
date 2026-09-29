@@ -54,8 +54,25 @@ def test_activate_edges(alphabet):
     v = g.activate_node(2, 1)
     assert g.A[alphabet.tau, v, v]
     assert g.A[1, 2, v]
+    assert g.A[alphabet.tau, v, 2]  # exit back to the anchor (D10)
     diff = g.A & ~before.A
-    assert diff.sum() == 2  # exactly anchor→v and the τ self-loop
+    assert diff.sum() == 3  # exactly anchor→v, the τ self-loop, and the τ exit
+
+
+def test_grown_node_is_not_absorbing(alphabet):
+    """D10: from a grown node the anchor is reachable, so no mind gets trapped."""
+    g = small_graph(alphabet, n0=3, n_max=6)
+    v = g.activate_node(0, 1)
+    w = g.activate_node(v, 2)
+    for node in (v, w):
+        reach, frontier = {node}, [node]
+        while frontier:
+            u = frontier.pop()
+            for nxt in np.flatnonzero(g.A[:, u, :].any(axis=0)):
+                if int(nxt) not in reach:
+                    reach.add(int(nxt))
+                    frontier.append(int(nxt))
+        assert 0 in reach
     assert edges_only_between_active(g)
     assert every_active_has_tau(g)
 
@@ -102,8 +119,8 @@ def test_generalize_tau_edge_without_own_label(alphabet):
     before = g.copy()
     word = (SELF_TAU, OTHER_ANY, SELF_ANY, OTHER_ANY)
     apply_growth(g, word, anchor=2, mode="generalize")
-    assert g.A[alphabet.tau, 2, 3] and g.A[alphabet.tau, 3, 3]
-    assert (g.A & ~before.A).sum() == 2  # no self-loops added
+    assert g.A[alphabet.tau, 2, 3] and g.A[alphabet.tau, 3, 3] and g.A[alphabet.tau, 3, 2]
+    assert (g.A & ~before.A).sum() == 3  # edge in, self-loop, exit; no self-loops added
 
 
 def test_generalize_at_budget_still_adds_self_loops(alphabet):

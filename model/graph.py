@@ -73,8 +73,9 @@ class Graph:
             self.A[label, idx, idx] = True
 
     def activate_node(self, anchor: int, label: int) -> int | None:
-        """Activate the lowest inactive node v, add anchor → v on `label` and a
-        τ self-loop at v. Return v, or None if |V| == N_max."""
+        """Activate the lowest inactive node v, add anchor → v on `label`, a
+        τ self-loop at v, and a τ exit v → anchor (v0.3, NOTEBOOK D10: without
+        it a grown node is absorbing). Return v, or None if |V| == N_max."""
         if not self.active[anchor]:
             raise ValueError(f"anchor {anchor} is not active")
         inactive = np.flatnonzero(~self.active)
@@ -84,6 +85,7 @@ class Graph:
         self.active[v] = True
         self.A[label, anchor, v] = True
         self.A[self.alphabet.tau, v, v] = True
+        self.A[self.alphabet.tau, v, anchor] = True
         return v
 
     def copy(self) -> Graph:
