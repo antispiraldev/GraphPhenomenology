@@ -23,16 +23,17 @@ class ObjectPolicy:
         self.alphabet = alphabet
 
     def act(self, agent: Agent, rng: np.random.Generator) -> tuple[int, list[ProbeEvent]]:
-        raise NotImplementedError
+        return self.alphabet.tau, []
 
     def respond(self, agent: Agent, offer: int, rng: np.random.Generator) -> tuple[int, list[ProbeEvent]]:
-        raise NotImplementedError
+        labels = agent.graph.available()
+        return int(labels[rng.integers(len(labels))]), []
 
     def observe(self, agent: Agent, tick: Tick) -> list[ProbeEvent]:
-        raise NotImplementedError
+        return []
 
     def reset_episode(self, agent: Agent) -> None:
-        raise NotImplementedError
+        return None
 
 
 class MirrorPolicy:
@@ -42,16 +43,16 @@ class MirrorPolicy:
         self.alphabet = alphabet
 
     def act(self, agent: Agent, rng: np.random.Generator) -> tuple[int, list[ProbeEvent]]:
-        raise NotImplementedError
+        return self.alphabet.tau, []
 
     def respond(self, agent: Agent, offer: int, rng: np.random.Generator) -> tuple[int, list[ProbeEvent]]:
-        raise NotImplementedError
+        return self.alphabet.complement(offer), []
 
     def observe(self, agent: Agent, tick: Tick) -> list[ProbeEvent]:
-        raise NotImplementedError
+        return []
 
     def reset_episode(self, agent: Agent) -> None:
-        raise NotImplementedError
+        return None
 
 
 class RecordingPolicy:
@@ -65,17 +66,30 @@ class RecordingPolicy:
         self.script = script
         self.pos = 0
 
+    def _next(self) -> int:
+        """Consume and return the next script label (looping). An empty
+        script yields τ."""
+        if not self.script:
+            return self.alphabet.tau
+        label = self.script[self.pos % len(self.script)]
+        self.pos = (self.pos + 1) % len(self.script)
+        return label
+
     def act(self, agent: Agent, rng: np.random.Generator) -> tuple[int, list[ProbeEvent]]:
-        raise NotImplementedError
+        label = self._next()
+        if label not in agent.graph.available():
+            label = self.alphabet.tau
+        return label, []
 
     def respond(self, agent: Agent, offer: int, rng: np.random.Generator) -> tuple[int, list[ProbeEvent]]:
-        raise NotImplementedError
+        return self._next(), []
 
     def observe(self, agent: Agent, tick: Tick) -> list[ProbeEvent]:
-        raise NotImplementedError
+        return []
 
     def reset_episode(self, agent: Agent) -> None:
-        raise NotImplementedError
+        # The script position deliberately persists across episodes (§8, D4).
+        return None
 
 
 def make_control_graph(
@@ -83,10 +97,21 @@ def make_control_graph(
 ) -> Graph:
     """Graph.random for object/recording; for mirror additionally a self-loop
     for every label at every active node (§8 mirror details)."""
-    raise NotImplementedError
+    if kind not in ("object", "recording", "mirror"):
+        raise ValueError(f"unknown control kind {kind!r}")
+    graph = Graph.random(alphabet, cfg, rng)
+    if kind == "mirror":
+        graph.add_self_loops(list(alphabet.labels))
+    return graph
 
 
 def capture_script(trace: list[Tick], agent_id: int) -> tuple[int, ...]:
     """Labels emitted by agent_id in trace order: its action on its turns, its
     response on the partner's turns (skipping partner τ ticks)."""
-    raise NotImplementedError
+    script: list[int] = []
+    for tick in trace:
+        if tick.initiator == agent_id:
+            script.append(tick.action)
+        elif tick.responder == agent_id and tick.response is not None:
+            script.append(tick.response)
+    return tuple(script)
