@@ -39,3 +39,34 @@ def declined_offer(alphabet: Alphabet, sigma: int) -> tuple[int, int, bool]:
 
 def tau(alphabet: Alphabet) -> tuple[int, None, bool]:
     return (alphabet.tau, None, False)
+
+
+def probe_event(agent_id: int, kind, record_id: int, pos: int = 0) -> ProbeEvent:
+    """Shorthand for a ProbeEvent (kind: a ProbeEventKind)."""
+    return ProbeEvent(agent_id, kind, record_id, pos)
+
+
+def make_agent(agent_id, alphabet, cfg, rng, level: int = 0, kind: str = "mind"):
+    """Agent with a random graph and `level` placeholder records appended
+    directly (tokens are a single accepted exchange; REF above level 1)."""
+    from model.agent import Agent
+    from model.graph import Graph
+    from model.records import Record, Token
+
+    agent = Agent(agent_id, Graph.random(alphabet, cfg, rng), kind=kind)
+    for k in range(1, level + 1):
+        body = (Token.self_offer(0), Token.other_offer(0))
+        tokens = body if k == 1 else (Token.make_ref(k - 2),) + body
+        agent.library.append(
+            Record(
+                id=k - 1,
+                level=k,
+                tokens=tokens,
+                anchor=0,
+                other=None if k == 1 else k - 2,
+                partner_id=-1,
+                saturated=False,
+                source="bootstrap",
+            )
+        )
+    return agent
