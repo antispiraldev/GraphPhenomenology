@@ -1,0 +1,2 @@
+# C0 calibration (spec §10): default config, 100 epochs; run over seeds 0-9 with experiments/run_c0.py
+epochs: 100

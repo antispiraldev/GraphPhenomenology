@@ -15,6 +15,11 @@ Spec: `mutual-recognition-model-spec.md` (currently v0.2).
 | ID | Date | Segment | Config / commit | Seeds | Question | Result | Notes |
 |---|---|---|---|---|---|---|---|
 | S0 | 2026-09-29 | G2 | smoke: 10 minds + 1 of each control, 20 epochs | 0 | Does the pipeline run end to end? | Yes. 0.5 s; mean level 0.8, max 2; 0 false positives in 8 mind–control windows; contingency computable in 83% of windows | Scratch run, outputs not kept |
+| C0 | 2026-09-29 | G3 | C0.yaml (defaults, 100 epochs) | 0–9 | Does development happen at defaults, and is contingency measurable? | **Fail.** Level ≥2: 19% (target 10%, pass). Contingency computable: 78% (target 80%, fail). Probe success 1–2% at every level | outputs/C0 |
+| C0-W100 | 2026-09-29 | G3 | C0 + W=100 | 0–9 | Does a longer window fix computability (tuning order: W first)? | **Fail.** Computable 77%, level ≥2 20%, level ≥1 fell to 55% | Longer windows didn't help, so the problem isn't sample size |
+| C0-diag | 2026-09-29 | G3 | C0, seed 0, last 10 epochs | 0 | Why is contingency not computable? | 18% of windows: only one offered label; 14%: fewer than 15 offers; the 5th percentile of offers is 0. Agents get trapped in sparse regions of their graph with 0–2 sync labels | Caused by the q_edge 0.05 change in D1 |
+| C0-q08 | 2026-09-29 | G3 | C0 + q_edge=0.08 | 0–9 | Does modestly denser wiring fix it? | **Pass.** Computable 89%, level ≥1 89%, level ≥2 32%, level ≥3 13%, mean max level 3.5 | Initial label availability ≈ 74% |
+| C0-q10 | 2026-09-29 | G3 | C0 + q_edge=0.10 | 0–9 | Same, denser | **Pass.** Computable 90%, level ≥1 87%, level ≥2 30%, level ≥3 9% | Availability ≈ 81% |
 
 ---
 

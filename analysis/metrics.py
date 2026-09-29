@@ -10,6 +10,7 @@ import numpy as np
 from model.agent import Agent
 from model.config import Config
 from model.records import SELF, Record, flat
+from model.trace import ProbeEventKind
 from sim.episode import EpisodeResult, probe_counts
 
 
@@ -25,6 +26,8 @@ class EpochAccumulator:
     one_sided_vs_mind: int = 0
     one_sided_vs_control: int = 0
     mind_control_windows: int = 0
+    # record level -> [starts, successes]; record id k is always level k + 1
+    probe_by_level: dict[int, list[int]] = field(default_factory=lambda: defaultdict(lambda: [0, 0]))
 
     def add_episode(self, result: EpisodeResult, partner_history: dict[int, set[int]]) -> None:
         """Fold one episode in. partner_history (agent → partners it has
@@ -41,6 +44,12 @@ class EpochAccumulator:
         starts, successes = probe_counts(result.trace)
         self.probe_starts += starts
         self.probe_successes += successes
+        for tick in result.trace:
+            for ev in tick.probe_events:
+                if ev.kind is ProbeEventKind.START:
+                    self.probe_by_level[ev.record_id + 1][0] += 1
+                elif ev.kind is ProbeEventKind.SUCCESS:
+                    self.probe_by_level[ev.record_id + 1][1] += 1
         for w in result.window_stats:
             self.mind_windows += 1
             self.contingency_computable += w.contingency_computable
@@ -79,6 +88,10 @@ def epoch_row(epoch: int, minds: list[Agent], acc: EpochAccumulator, cfg: Config
     }
     for k, n in enumerate(hist):
         row[f"n_level_{k}"] = int(n)
+    for k in range(1, cfg.k_max + 1):
+        starts, successes = acc.probe_by_level.get(k, [0, 0])
+        row[f"probe_starts_L{k}"] = starts
+        row[f"probe_successes_L{k}"] = successes
     return row
 
 
