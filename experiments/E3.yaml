@@ -1,0 +1,5 @@
+# E3 — Phase transition (spec §10). Defaults except a shorter run (200 epochs) to fit
+# the compute budget. Sweep one parameter at a time with experiments/sweep.py
+# (commands in results/E3.md). Order parameter: fraction of minds at level >= 2
+# at the final epoch.
+epochs: 200
