@@ -24,6 +24,7 @@ Spec: `mutual-recognition-model-spec.md` (currently v0.2).
 | E0-diag | 2026-09-29 | G4a | E0 with 12 recordings | 0–11 | Why do recordings get recognized? | Chance lift: C sits just above θ (median 0.33) with 15–24 offers; 45% of cases are 2-label windows. 55% at level 0, 43% at level 1 | Objects and mirrors are excluded by structure (no initiative); recordings only statistically |
 | C0-θ04 | 2026-09-29 | G4a | C0 + θ=0.4 | 0–9 | Does a stricter threshold hurt development? | Barely: level ≥2 30% (vs 32%), computable 87%, still passes | |
 | E0-θ04 | 2026-09-29 | G4a | E0 + θ=0.4 | 0–31 | False recognitions at θ=0.4? | Recording 15 / 147,752 (**0.010%**, ~9× lower); object and mirror 0; level ≥2 23% (vs 26%) | outputs/E0_theta04 |
+| E0-final | 2026-09-29 | G4a | E0.yaml at θ=0.4 | 0–99 | Does the revised control criterion hold? | **Pass.** Object 0 / 448,504; mirror 0 / 454,356; recording 37 / 448,872 (0.008%, limit 0.02%). Level ≥2: 22%, max level 10 | outputs/E0_final. G4a gate passed |
 
 ---
 
