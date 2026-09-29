@@ -23,8 +23,8 @@ import numpy as np
 from model.actions import Alphabet
 from model.config import Config
 from model.graph import Graph
-from model.records import Library, Token
-from model.trace import ProbeEvent, Tick
+from model.records import Library, Token, TokenKind, flat
+from model.trace import ProbeEvent, ProbeEventKind, Tick
 
 Kind = Literal["mind", "object", "recording", "mirror"]
 
@@ -94,15 +94,91 @@ class MindPolicy:
         self.cfg = cfg
 
     def act(self, agent: Agent, rng: np.random.Generator) -> tuple[int, list[ProbeEvent]]:
-        raise NotImplementedError
+        events: list[ProbeEvent] = []
+        if agent.probe is None and len(agent.library) > 0:
+            if rng.random() < self.cfg.p_probe:
+                rid = self._choose_record(agent, rng)
+                word = flat(agent.library[rid], agent.library)
+                agent.probe = ProbeState(rid, word, 0)
+                events.append(ProbeEvent(agent.id, ProbeEventKind.START, rid, 0))
+        if agent.probe is not None:
+            probe = agent.probe
+            tok = probe.word[probe.pos]
+            if tok.kind is TokenKind.SELF_OFFER:
+                if tok.label in agent.graph.available():
+                    return tok.label, events
+                events.append(self._abort(agent))
+            elif tok.kind is TokenKind.SELF_TAU:
+                return self.alphabet.tau, events
+            elif tok.kind is TokenKind.SELF_ANY:
+                return self._explore(agent, rng), events
+            else:  # out of phase: an other token on my turn
+                events.append(self._abort(agent))
+        return self._explore(agent, rng), events
 
     def respond(
         self, agent: Agent, offer: int, rng: np.random.Generator
     ) -> tuple[int, list[ProbeEvent]]:
-        raise NotImplementedError
+        events: list[ProbeEvent] = []
+        probe = agent.probe
+        if probe is not None:
+            tok = probe.word[probe.pos]
+            if tok.kind is TokenKind.OTHER_OFFER:
+                if tok.label == offer:
+                    # Accept; if complement is unavailable this is a decline
+                    # and observe aborts the probe.
+                    return self.alphabet.complement(offer), events
+                events.append(self._abort(agent))
+            # OTHER_ANY (or out of phase): reactivity; observe advances/aborts.
+        return self._react(agent, offer, rng), events
 
     def observe(self, agent: Agent, tick: Tick) -> list[ProbeEvent]:
-        raise NotImplementedError
+        probe = agent.probe
+        if probe is None:
+            return []
+        tok = probe.word[probe.pos]
+        role = tick.role_of(agent.id)
+        if role == "self":
+            if tok.kind is TokenKind.SELF_OFFER:
+                ok = tick.action == tok.label and tick.accepted
+            elif tok.kind is TokenKind.SELF_TAU:
+                ok = tick.action == self.alphabet.tau
+            else:
+                ok = tok.kind is TokenKind.SELF_ANY
+        else:
+            if tok.kind is TokenKind.OTHER_OFFER:
+                ok = tick.action == tok.label and tick.accepted
+            else:
+                ok = tok.kind is TokenKind.OTHER_ANY
+        if not ok:
+            return [self._abort(agent)]
+        probe.pos += 1
+        if probe.pos == len(probe.word):
+            agent.probe = None
+            return [ProbeEvent(agent.id, ProbeEventKind.SUCCESS, probe.record_id, probe.pos)]
+        return [ProbeEvent(agent.id, ProbeEventKind.ADVANCE, probe.record_id, probe.pos)]
 
     def reset_episode(self, agent: Agent) -> None:
-        raise NotImplementedError
+        agent.probe = None
+
+    # --- helpers ---
+
+    def _choose_record(self, agent: Agent, rng: np.random.Generator) -> int:
+        levels = np.array([r.level for r in agent.library], dtype=float)
+        w = np.exp(self.cfg.beta * (levels - levels.max()))
+        return int(rng.choice(len(levels), p=w / w.sum()))
+
+    def _explore(self, agent: Agent, rng: np.random.Generator) -> int:
+        avail = agent.graph.available()
+        return int(avail[rng.integers(len(avail))])
+
+    def _react(self, agent: Agent, offer: int, rng: np.random.Generator) -> int:
+        comp = self.alphabet.complement(offer)
+        if rng.random() < self.cfg.rho and comp in agent.graph.available():
+            return comp
+        return self._explore(agent, rng)
+
+    def _abort(self, agent: Agent) -> ProbeEvent:
+        probe = agent.probe
+        agent.probe = None
+        return ProbeEvent(agent.id, ProbeEventKind.ABORT, probe.record_id, probe.pos)
