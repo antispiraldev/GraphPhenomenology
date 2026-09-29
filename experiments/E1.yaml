@@ -1,0 +1,6 @@
+# E1 — Bootstrap vs elder (spec §10). Defaults otherwise (q_edge 0.08, θ 0.4).
+# Run: uv run python -m experiments.E1 --config experiments/E1.yaml --seeds 16 --workers 3 --tag E1
+N_agents: 20
+contact: erdos_renyi
+p_contact: 0.2
+epochs: 400
