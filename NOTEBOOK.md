@@ -14,7 +14,7 @@ Spec: `mutual-recognition-model-spec.md` (currently v0.2).
 
 | ID | Date | Segment | Config / commit | Seeds | Question | Result | Notes |
 |---|---|---|---|---|---|---|---|
-| _none yet_ | | | | | | | |
+| S0 | 2026-09-29 | G2 | smoke: 10 minds + 1 of each control, 20 epochs | 0 | Does the pipeline run end to end? | Yes. 0.5 s; mean level 0.8, max 2; 0 false positives in 8 mind–control windows; contingency computable in 83% of windows | Scratch run, outputs not kept |
 
 ---
 
@@ -64,6 +64,36 @@ Filling gaps the spec leaves open:
 - A recording's script position persists across episodes; a recording "declines" by returning its script label even when unavailable.
 - Config adds `controls` (kind → count), `output_dir` and `record_traces`.
 - Git identity for this repo is set locally to Luca / the user's email.
+
+### D5 — 2026-09-29 — G1 gate passed; judgment calls by module
+Correction to D4: the environment runs **Python 3.12.14** (uv picked it under `requires-python >= 3.12`), not 3.14.
+
+G0 addendum: graph basics, `flat`, `extras`, `is_alternating` and `own_labels` were implemented before G1, so no parallel module was blocked on another.
+
+All six modules were merged into `main`, with 205 tests passing. Choices made where the spec is silent:
+
+- **Graph:** `activate_node` rejects an inactive anchor. Growth mode names are validated. At the node budget, self-loops are still added.
+- **Records:** a level-1 record is never saturated. Elder records are checked for saturation against the learner's own top. `transmit` rejects non-alternating input.
+- **Recognition:**
+  - A qualifying segment must end inside the current window, so an earlier segment can't mask a later valid one.
+  - An extension whose first accepted partner offer falls before the window is skipped.
+  - With `require_mutual = false`, each qualifying mind levels up regardless of its partner's level (§5.4 "independently").
+  - In mixed mode, a lower-level learner who qualifies always takes the elder route.
+  - An offer-independent responder scores mean |C| ≈ 0.065 over 50-tick windows.
+- **Mind policy:**
+  - The reactivity fallback is uniform over available labels and can itself hit the complement. So the effective acceptance rate is ρ + (1−ρ)/|available|, not ρ.
+  - A matched `OTHER_OFFER` whose complement is unavailable becomes a decline, and the probe aborts.
+  - `SELF_TAU` advances only on an actual τ.
+- **Controls:** an object's uniform response can be τ, which declines. A recording keeps its own τ moves in its script, and an empty script plays τ. Capture skips only ticks where the partner played τ.
+- **Product analysis:** the full identity is used in I⊗A, so pairs of an active and an inactive node get τ edges. Those states are unreachable, so results are unaffected. A declined-offer pass needs only the mover to have a sync label.
+
+### D6 — 2026-09-29 — G2 gate passed; integration choices
+The episode loop, runner, metrics and CLI are done, with 215 tests passing. The reproducibility, isolation, monotonicity, record well-formedness and control invariants are all tested.
+- **Window lookback:** `lo = max(first unused tick, start of previous window)`. After any qualifying segment, whether or not it led to a level-up, the agent's first unused tick moves past the segment end.
+- **Record writing:** within a window, all level-up records are built before any is appended, so an elder's record is read at its pre-window level.
+- **Contact graphs:** `pairs` = (0,1), (2,3), …; `small_world` = a ring lattice with 2 neighbours per side, each edge rewired with probability `p_contact`. Per-epoch matching is a random maximal matching over the contact edges.
+- **Population:** controls join the contact graph like minds. A recording's script comes from one throwaway episode between two fresh minds, drawn from the run's single RNG stream.
+- **Outputs** per run go to `outputs/<config>_s<seed>/`: `metrics.csv`, `library.json`, `summary.json` (trace hash, word lengths by level, distinct flat words), `config.yaml`, and optionally `traces.jsonl`.
 
 ---
 
