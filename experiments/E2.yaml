@@ -1,0 +1,8 @@
+# E2 — Credulity sweep (spec §10): the E0 population (20 minds + 4 of each control
+# kind, ER p=0.2), 300 epochs; theta is swept by experiments/E2.py. Run:
+#   uv run python -m experiments.E2 all
+N_agents: 20
+controls: {object: 4, recording: 4, mirror: 4}
+contact: erdos_renyi
+p_contact: 0.2
+epochs: 300
