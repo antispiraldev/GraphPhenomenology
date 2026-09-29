@@ -3,7 +3,7 @@
 **Changes from v0.1:**
 1. Controls are judged by **one-sided recognition** (§5.4), so E0 and E2 can actually fail.
 2. Contingency is a **pooled** lift over all offers in the window (§5.2). The per-label minimum `n_min` is removed.
-3. Growth also **activates a new node** on each unlock (§6). Default `q_edge` is lowered to 0.05 so availability starts well below 100%.
+3. Growth also **activates a new node** on each unlock (§6). Default `q_edge` is lowered (to 0.08 after calibration; see NOTEBOOK D7) so availability starts well below 100%.
 4. New token `SELF_ANY` encodes my turns that weren't accepted offers or τ moves, such as declined offers (§3.3).
 5. Elder transmission is defined precisely, with a phase shift that keeps records well-formed (§5.7).
 6. Edge cases are settled: partner τ during a probe (§4.3), segments crossing window boundaries (§5), and control behavior (§8).
@@ -263,7 +263,7 @@ When a record is written, apply `growth` (default `generalize`):
 
 All growth is monotone: edges and active nodes are only ever added. Once |V| = N_max, step 1 is skipped. With N0 = 16 and N_max = 64, an agent can grow for 48 unlocks, far beyond k_max.
 
-The default `q_edge = 0.05` makes a label available at a fresh node with probability about 1 − 0.95¹⁶ ≈ 0.56. At the v0.1 value of 0.15 it was ≈ 0.93, which left growth almost nothing to add.
+The default `q_edge = 0.08` makes a label available at a fresh node with probability about 1 − 0.92¹⁶ ≈ 0.74. At the v0.1 value of 0.15 it was ≈ 0.93, which left growth almost nothing to add. At 0.05 (≈ 0.56) agents got trapped in sparse regions and contingency was often not computable (calibration C0, NOTEBOOK D7).
 
 ## 7. Analysis layer (not used in the main loop)
 
@@ -299,7 +299,7 @@ Controls have their own graphs. They never write records. "No recognition" means
 |---|---|---|
 | m | 3 | sync action pairs (\|Σ\| = 2m + 1) |
 | N_max / N0 | 64 / 16 | node budget / initial active nodes |
-| q_edge | 0.05 | initial edge probability per label per node pair |
+| q_edge | 0.08 | initial edge probability per label per node pair (set by calibration C0) |
 | N_agents | 20 | population size |
 | contact | "erdos_renyi" | contact graph type |
 | p_contact | 0.2 | ER edge probability |

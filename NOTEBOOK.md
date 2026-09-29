@@ -100,6 +100,11 @@ The episode loop, runner, metrics and CLI are done, with 215 tests passing. The 
 - **Population:** controls join the contact graph like minds. A recording's script comes from one throwaway episode between two fresh minds, drawn from the run's single RNG stream.
 - **Outputs** per run go to `outputs/<config>_s<seed>/`: `metrics.csv`, `library.json`, `summary.json` (trace hash, word lengths by level, distinct flat words), `config.yaml`, and optionally `traces.jsonl`.
 
+### D7 — 2026-09-29 — G3 gate passed (user approved): q_edge = 0.08
+C0 failed at q_edge 0.05 because contingency was computable in only 78% of windows. The cause was agents trapped in sparse graph regions, not window length (C0-W100, C0-diag). The user approved **q_edge = 0.08** as the new default: it passes with 89% computable and 32% of agents at level ≥2. This partly reverts D1 item 4. Initial label availability is ≈ 74%, which still leaves room for growth. The other defaults are unchanged (W = 50). Spec §6 and §9 are updated.
+
+Observation to follow up in E4: probe success is low (1–3%) and falls with record level.
+
 ---
 
 ## Glossary

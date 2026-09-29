@@ -29,7 +29,7 @@ def test_alphabet_complement_is_involution(alphabet):
 def test_config_defaults_and_yaml(tmp_path):
     cfg = Config.from_yaml("experiments/default.yaml")
     assert cfg == Config()
-    assert cfg.q_edge == 0.05
+    assert cfg.q_edge == 0.08
     p = tmp_path / "bad.yaml"
     p.write_text("n_min: 5\n")
     with pytest.raises(ValueError):

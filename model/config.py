@@ -18,7 +18,7 @@ class Config:
     m: int = 3
     N_max: int = 64
     N0: int = 16
-    q_edge: float = 0.05
+    q_edge: float = 0.08
     N_agents: int = 20
     contact: Contact = "erdos_renyi"
     p_contact: float = 0.2
