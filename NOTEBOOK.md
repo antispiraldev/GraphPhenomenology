@@ -20,6 +20,10 @@ Spec: `mutual-recognition-model-spec.md` (currently v0.2).
 | C0-diag | 2026-09-29 | G3 | C0, seed 0, last 10 epochs | 0 | Why is contingency not computable? | 18% of windows: only one offered label; 14%: fewer than 15 offers; the 5th percentile of offers is 0. Agents get trapped in sparse regions of their graph with 0–2 sync labels | Caused by the q_edge 0.05 change in D1 |
 | C0-q08 | 2026-09-29 | G3 | C0 + q_edge=0.08 | 0–9 | Does modestly denser wiring fix it? | **Pass.** Computable 89%, level ≥1 89%, level ≥2 32%, level ≥3 13%, mean max level 3.5 | Initial label availability ≈ 74% |
 | C0-q10 | 2026-09-29 | G3 | C0 + q_edge=0.10 | 0–9 | Same, denser | **Pass.** Computable 90%, level ≥1 87%, level ≥2 30%, level ≥3 9% | Availability ≈ 81% |
+| E0 | 2026-09-29 | G4a | E0.yaml: 20 minds + 4 object, 4 recording, 4 mirror; ER p=0.2; 500 epochs; θ=0.3 | 0–99 | Do minds ever recognize controls? | **Gate fails.** Object 0 / 458,668 windows; mirror 0 / 460,660; **recording 417 / 455,464 (0.092%)**. Minds still develop: 26% at level ≥2, max level 10 | outputs/E0; 100 distinct trace hashes |
+| E0-diag | 2026-09-29 | G4a | E0 with 12 recordings | 0–11 | Why do recordings get recognized? | Chance lift: C sits just above θ (median 0.33) with 15–24 offers; 45% of cases are 2-label windows. 55% at level 0, 43% at level 1 | Objects and mirrors are excluded by structure (no initiative); recordings only statistically |
+| C0-θ04 | 2026-09-29 | G4a | C0 + θ=0.4 | 0–9 | Does a stricter threshold hurt development? | Barely: level ≥2 30% (vs 32%), computable 87%, still passes | |
+| E0-θ04 | 2026-09-29 | G4a | E0 + θ=0.4 | 0–31 | False recognitions at θ=0.4? | Recording 15 / 147,752 (**0.010%**, ~9× lower); object and mirror 0; level ≥2 23% (vs 26%) | outputs/E0_theta04 |
 
 ---
 

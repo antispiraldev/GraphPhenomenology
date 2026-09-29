@@ -26,6 +26,8 @@ class EpochAccumulator:
     one_sided_vs_mind: int = 0
     one_sided_vs_control: int = 0
     mind_control_windows: int = 0
+    # per control kind: [windows, one-sided recognitions]
+    vs_kind: dict[str, list[int]] = field(default_factory=lambda: {k: [0, 0] for k in ("object", "recording", "mirror")})
     # record level -> [starts, successes]; record id k is always level k + 1
     probe_by_level: dict[int, list[int]] = field(default_factory=lambda: defaultdict(lambda: [0, 0]))
 
@@ -58,6 +60,8 @@ class EpochAccumulator:
             else:
                 self.mind_control_windows += 1
                 self.one_sided_vs_control += w.one_sided
+                self.vs_kind[w.partner_kind][0] += 1
+                self.vs_kind[w.partner_kind][1] += w.one_sided
 
 
 def _frac(num: int, den: int) -> float:
@@ -86,6 +90,9 @@ def epoch_row(epoch: int, minds: list[Agent], acc: EpochAccumulator, cfg: Config
         "mind_control_windows": acc.mind_control_windows,
         "false_positive_rate": _frac(acc.one_sided_vs_control, acc.mind_control_windows),
     }
+    for kind, (windows, hits) in acc.vs_kind.items():
+        row[f"windows_vs_{kind}"] = windows
+        row[f"one_sided_vs_{kind}"] = hits
     for k, n in enumerate(hist):
         row[f"n_level_{k}"] = int(n)
     for k in range(1, cfg.k_max + 1):

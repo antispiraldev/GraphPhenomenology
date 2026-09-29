@@ -1,0 +1,7 @@
+# E0 — Controls (spec §10): minds develop among themselves while also meeting controls.
+# Expect zero one-sided recognitions of any control. Run: sweep --seeds 100 --tag E0
+N_agents: 20
+controls: {object: 4, recording: 4, mirror: 4}
+contact: erdos_renyi
+p_contact: 0.2
+epochs: 500
