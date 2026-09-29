@@ -25,6 +25,11 @@ Spec: `mutual-recognition-model-spec.md` (currently v0.2).
 | C0-θ04 | 2026-09-29 | G4a | C0 + θ=0.4 | 0–9 | Does a stricter threshold hurt development? | Barely: level ≥2 30% (vs 32%), computable 87%, still passes | |
 | E0-θ04 | 2026-09-29 | G4a | E0 + θ=0.4 | 0–31 | False recognitions at θ=0.4? | Recording 15 / 147,752 (**0.010%**, ~9× lower); object and mirror 0; level ≥2 23% (vs 26%) | outputs/E0_theta04 |
 | E0-final | 2026-09-29 | G4a | E0.yaml at θ=0.4 | 0–99 | Does the revised control criterion hold? | **Pass.** Object 0 / 448,504; mirror 0 / 454,356; recording 37 / 448,872 (0.008%, limit 0.02%). Level ≥2: 22%, max level 10 | outputs/E0_final. G4a gate passed |
+| E1 | 2026-09-29 | G4b | E1.yaml; one level-5 elder transplanted into 19 fresh minds; 400 epochs | 0–15 | Bootstrap vs elder vs mixed | Mean level at 400: bootstrap 1.41 ± 0.07 (same as without the elder); elder 2.56 ± 0.44, first L1 at epoch 93 ± 30, one distinct content per level; **mixed 3.66 ± 0.17** (3.48 without the elder). In elder mode, 83% of level-ups came from minds the elder had taught; elder repertoire (2 vs 3 labels) decides its reach | results/E1.md |
+| E2 | 2026-09-29 | G4b | E0 population, θ ∈ [0, 0.8], 300 epochs | 10–32 per θ | Credulity trade-off | Object and mirror 0 at every θ. Recording FP 6.1% at θ=0, 7.6e-4 at 0.3, 9.0e-5 at 0.4 (CI 3.9e-5 to 1.8e-4), 0 for θ ≥ 0.5; the criterion crosses at θ ≈ 0.37. Final development flat for θ ≤ 0.45; stalls above 0.5 (level ≥1 falls to 0.29 at 0.6). The trade-off is L-shaped, with its knee at 0.35–0.4 | results/E2.md |
+| E3 | 2026-09-29 | G4b | 1-D sweeps of ρ, p_contact, q_edge; 200 epochs | 8 per point | Phase transition? | Only ρ has a threshold (level ≥1 goes 0.05 → 0.84 between ρ 0.15 and 0.35), and it does **not** sharpen with N (onset slope 5.5 / 4.9 / 5.1 at N = 10 / 20 / 40): a per-encounter crossover, not a collective transition. p_contact and q_edge curves are smooth, and their low ends are artifacts (no contact; contingency not computable). The φ ≈ 0.3 ceiling comes from rare 1→2 steps | results/E3.md |
+| E4 | 2026-09-29 | G4b | p_probe sweep, growth none vs generalize; 500 epochs | 12 | Autocatalysis? | **Not supported.** p_probe 0 caps at level 1 (by construction). Level ≥2 peaks at 34% (p_probe 0.5). Hazard 0→1 ≈ 27% per epoch, 1→2 ≈ 0.1%, 3→5 ≈ 4–20% (selection-confounded). growth=none: 73% reach level 2 vs 28%. 79% of minds are trapped on grown nodes | results/E4.md |
+| E5 | 2026-09-29 | G4b | fixed pairs vs shuffled vs ER 0.2 | 30 | Private languages? | Per encounter **yes**: probe success with a co-builder is 2.9× that with a same-level stranger; level-ups 16.7×; co-builders' learned moves are complementary (Jaccard 0.85–1.0). At population level **no**: fixed pairs reach level ≥2 at 23% vs 48% shuffled; 25 of 300 fixed pairs never bootstrap. The mechanism is mostly shrunken repertoires on trap nodes | results/E5.md |
 
 ---
 
@@ -115,6 +120,21 @@ From today the user has asked Claude to take the initiative and explain each ste
 - **Problem:** E0 at θ = 0.3 recognized recordings in 0.092% of windows. The cause is chance lift with small samples, not a bug. No finite θ reaches exactly zero for recordings.
 - **Decision:** default **θ = 0.4**, which cuts the rate about ninefold (0.010% in E0-θ04) and lowers level ≥2 only slightly (30% vs 32% in C0). The §11 control criterion becomes: objects and mirrors **zero**; recordings **< 1 in 5,000** windows.
 - **Rejected for now:** a significance-based test in place of a fixed θ (more principled, but a spec change and rework). E2 maps the θ trade-off anyway, and we can revisit.
+
+### D9 — 2026-09-29 — G4b gate passed (spec v0.2 results); experiment judgment calls
+All five experiments were merged, with 217 tests passing. This state is tagged `v0.2-results`. Judgment calls, by experiment:
+- **E1:** the elder is the first mind to reach level 5 in a donor bootstrap population, retried up to 5 times; seed 3's elder is level 4. No-elder reference arms were added. The "distinct new content" metric counts accepted offers only, ignoring swap and padding, because distinct flat words overstate diversity under transmission.
+- **E2:** 300 epochs; extra seeds at θ 0.3–0.45; exact Clopper–Pearson intervals; early speed measured as mean level at epoch 25.
+- **E3:** 200 epochs; the size check holds mean degree at ≈ 3.8 (p_contact 0.42 / 0.2 / 0.1); computability is taken from the final epoch.
+- **E4:** a custom run loop, hash-identical to the runner; the hazard is conditioned on having an equal-level partner; seed-bootstrap CIs; the growth=none arm runs at p_probe 0.3.
+- **E5:** partners are classed as co-builder of the current top record, past partner or stranger; comparisons are level-standardized; probes still open at episode end count as failures.
+- **Shared-code requests** (deferred): sweep should save per-epoch computability curves, per-agent levels by id and a seed offset; `WindowStat` should carry C and the mind's level; the runner should expose per-epoch mind levels.
+
+**Cross-cutting finding, from E1, E4 and E5 independently:** grown nodes are **absorbing**. Under §6 as written, a node activated on unlock has only self-loops as out-edges. 79–100% of developed minds end up trapped on one, with 1–3 sync labels. That shapes every v0.2 result: the 1→2 bottleneck, the φ ≈ 0.3 ceiling, E5's private-language signal, and growth=none beating generalize. This was a design error in D1 item 3 (mine).
+
+### D10 — 2026-09-29 — Spec v0.3: grown nodes get an exit *(delegated — for user review)*
+- **Change:** `activate_node` also adds a τ edge v → anchor. A grown node is still reached through the learned label, but a mind can walk back out, so growth adds territory instead of a trap.
+- **Plan (G4c):** re-run C0 and E0 to check calibration and controls under v0.3, then re-run E1–E5 with the same scripts and compare each result with v0.2. The v0.2 results stay in `results/` as the comparison baseline.
 
 ---
 

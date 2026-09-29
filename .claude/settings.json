@@ -20,7 +20,8 @@
       "Bash(cat:*)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "mcp__claude_ai_Claude_Docs__guide"
     ],
     "deny": [
       "Bash(git push:*)",
