@@ -1,15 +1,18 @@
 """E4 analysis: tables for results/E4.md and figures results/E4_*.png.
 
     uv run python -m experiments.E4_analyze
+    uv run python -m experiments.E4_analyze --suffix _v03 --p-values 0.1,0.3,0.5,0.8
 
-Reads outputs/E4_pprobe/*.npz and outputs/E4_growth/*.npz written by
-experiments/E4.py. Uncertainty: mean ± standard error across seeds for
+Reads outputs/E4_pprobe<suffix>/*.npz and outputs/E4_growth<suffix>/*.npz
+written by experiments/E4.py; writes results/E4<suffix>_tables.md,
+results/E4<suffix>_*.png and outputs/E4<suffix>_summary.json. Uncertainty: mean ± standard error across seeds for
 per-run quantities; 95% cluster-bootstrap intervals (resampling seeds) for
 pooled rates (hazards, probe success).
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from pathlib import Path
@@ -22,8 +25,9 @@ import numpy as np  # noqa: E402
 
 OUT = Path("outputs")
 RES = Path("results")
-P_VALUES = [0.0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.8]
-KMAX_SHOW = 5
+ALL_P = [0.0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.8]   # full v0.2 grid; fixes ramp colours
+P_VALUES = list(ALL_P)
+KMAX_SHOW = 7
 BOOT = 2000
 RNG = np.random.default_rng(12345)   # analysis-only bootstrap stream
 
@@ -159,14 +163,22 @@ def style(ax, xlabel, ylabel, title=None):
 
 
 def main() -> None:
+    global P_VALUES
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--suffix", default="", help="appended to output tags and result file names")
+    ap.add_argument("--p-values", default=",".join(fmt_p(p) for p in ALL_P))
+    args = ap.parse_args()
+    sfx = args.suffix
+    P_VALUES = [float(x) for x in args.p_values.split(",")]
     RES.mkdir(exist_ok=True)
-    sweep = {p: load("E4_pprobe", f"p_probe{fmt_p(p)}_s*.npz") for p in P_VALUES}
-    growth_none = load("E4_growth", "growthnone_s*.npz")
+    sweep = {p: load(f"E4_pprobe{sfx}", f"p_probe{fmt_p(p)}_s*.npz") for p in P_VALUES}
+    growth_none = load(f"E4_growth{sfx}", "growthnone_s*.npz")
+    n_seeds = len(growth_none)
     summary: dict = {}
     md: list[str] = []
 
     # ---- (a)
-    md.append("### (a) Final levels and time to level (epoch 500, 20 minds, 12 seeds)\n")
+    md.append(f"### (a) Final levels and time to level (epoch 500, 20 minds, {n_seeds} seeds)\n")
     md.append("| p_probe | mean level | ≥1 | ≥2 | ≥3 | ≥4 | max (median [range]) | first pair at L2 | 25% at L2 | first pair at L3 | contingency computable |")
     md.append("|---|---|---|---|---|---|---|---|---|---|---|")
     stats = {}
@@ -297,8 +309,8 @@ def main() -> None:
         md.append(f"| {fmt_p(p)} | " + " | ".join(
             f"{100*g[k]['rate']:.1f}% (n={g[k]['starts']})" if k in g else "–" for k in (1, 2, 3, 4)) + " |")
 
-    (RES / "E4_tables.md").write_text("\n".join(md) + "\n")
-    (OUT / "E4_summary.json").write_text(json.dumps(summary, indent=1, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o)))
+    (RES / f"E4{sfx}_tables.md").write_text("\n".join(md) + "\n")
+    (OUT / f"E4{sfx}_summary.json").write_text(json.dumps(summary, indent=1, default=lambda o: o.tolist() if hasattr(o, "tolist") else str(o)))
     print("\n".join(md))
 
     # ================================================================ figures
@@ -309,7 +321,7 @@ def main() -> None:
     ax = axes[0]
     for i, p in enumerate(P_VALUES):
         cur = stats[p]["curves"][2].mean(0)
-        ax.plot(np.arange(len(cur)), 100 * cur, color=RAMP[i], lw=2, label=f"{fmt_p(p)}")
+        ax.plot(np.arange(len(cur)), 100 * cur, color=RAMP[ALL_P.index(p)], lw=2, label=f"{fmt_p(p)}")
     style(ax, "epoch", "minds at level ≥ 2 (%)", "Share of minds at level ≥ 2 over time")
     ax.legend(title="p_probe", frameon=False, fontsize=8, title_fontsize=8, ncol=2, loc="center right")
     ax = axes[1]
@@ -320,11 +332,10 @@ def main() -> None:
         ax.annotate(f"level ≥ {k}", (P_VALUES[-1], m[-1]), xytext=(6, 0), textcoords="offset points",
                     color=TEXT2, va="center", fontsize=9)
     style(ax, "p_probe (probability of starting a probe on a turn)", "minds at epoch 500 (%)",
-          "Final level reached vs probe rate (mean ± SE, 12 seeds)")
+          f"Final level reached vs probe rate (mean ± SE, {n_seeds} seeds)")
     ax.set_xlim(-0.03, 0.95)
-    ax.legend(frameon=False, fontsize=8, loc="center right", bbox_to_anchor=(1.0, 0.62))
     fig.tight_layout()
-    fig.savefig(RES / "E4_development.png")
+    fig.savefig(RES / f"E4{sfx}_development.png")
     plt.close(fig)
 
     # Fig 2: hazard by level
@@ -341,14 +352,14 @@ def main() -> None:
         ax.errorbar(np.array(ks) + dx, 100 * est, yerr=[100 * (est - lo), 100 * (hi - est)], color=col,
                     marker="o", ms=6, lw=2, capsize=3, label=label)
     style(ax, "current level k", "level-up probability per epoch (%)\ngiven an equal-level partner",
-          "Hazard of k → k+1: a bottleneck at the first probe-based step")
+          "Hazard of k → k+1 by current level")
     ax.set_yscale("log")
     ax.set_xticks(range(KMAX_SHOW + 1))
     ax.legend(frameon=False, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=2)
-    ax.text(0.01, 0.02, "95% seed-bootstrap CIs (12 seeds); levels with ≥ 30 equal-level pairings",
+    ax.text(0.01, 0.02, f"95% seed-bootstrap CIs ({n_seeds} seeds); levels with ≥ 30 equal-level pairings",
             transform=ax.transAxes, ha="left", va="bottom", fontsize=7.5, color=TEXT2)
     fig.tight_layout()
-    fig.savefig(RES / "E4_hazard.png")
+    fig.savefig(RES / f"E4{sfx}_hazard.png")
     plt.close(fig)
 
     # Fig 3: probe success vs offer tokens
@@ -367,15 +378,15 @@ def main() -> None:
     ax.plot(xs, 100 * q ** xs, color=TEXT2, lw=1.5, ls=":",
             label=f"independent offers: q^n, q = {q:.2f}")
     style(ax, "offer tokens in the flattened word (n)", "probe success rate (%)",
-          "Probe success falls far more slowly than independent offers predict")
+          "Probe success by offer tokens and record level")
     ax.set_yscale("log")
-    ax.set_ylim(1e-2, 20)
+    ax.set_ylim(1e-2, 100)
     ax.set_xlim(1.5, 13.5)
     ax.legend(frameon=False, fontsize=8)
-    ax.text(0.01, 0.02, "pooled over all p_probe > 0 runs (72); 95% seed-bootstrap CIs; cells ≥ 200 probes",
+    ax.text(0.01, 0.02, f"pooled over all p_probe > 0 runs ({len(all_runs)}); 95% seed-bootstrap CIs; cells ≥ 200 probes",
             transform=ax.transAxes, ha="left", va="bottom", fontsize=7.5, color=TEXT2)
     fig.tight_layout()
-    fig.savefig(RES / "E4_probe_success.png")
+    fig.savefig(RES / f"E4{sfx}_probe_success.png")
     plt.close(fig)
 
 
