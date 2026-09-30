@@ -31,6 +31,12 @@ Spec: `mutual-recognition-model-spec.md` (currently v0.2).
 | E4 | 2026-09-29 | G4b | p_probe sweep, growth none vs generalize; 500 epochs | 12 | Autocatalysis? | **Not supported.** p_probe 0 caps at level 1 (by construction). Level ≥2 peaks at 34% (p_probe 0.5). Hazard 0→1 ≈ 27% per epoch, 1→2 ≈ 0.1%, 3→5 ≈ 4–20% (selection-confounded). growth=none: 73% reach level 2 vs 28%. 79% of minds are trapped on grown nodes | results/E4.md |
 | E5 | 2026-09-29 | G4b | fixed pairs vs shuffled vs ER 0.2 | 30 | Private languages? | Per encounter **yes**: probe success with a co-builder is 2.9× that with a same-level stranger; level-ups 16.7×; co-builders' learned moves are complementary (Jaccard 0.85–1.0). At population level **no**: fixed pairs reach level ≥2 at 23% vs 48% shuffled; 25 of 300 fixed pairs never bootstrap. The mechanism is mostly shrunken repertoires on trap nodes | results/E5.md |
 | C0-v03 | 2026-09-29 | G4c | C0 under spec v0.3 (grown nodes have an exit) | 0–9 | Does calibration still pass after the trap fix? | **Pass.** Level ≥1 83%, **level ≥2 71%** (v0.2: 32%), level ≥3 30%; contingency computable 99.7% (v0.2: 89%). Probe success at L1 6.4% (v0.2: ~3%). Defaults unchanged | outputs/C0_v03 |
+| E0-v03 | 2026-09-30 | G4c | E0.yaml under v0.3 | 0–99 | Controls still hold after the fix? | **Pass.** Object 0 / 454,604; mirror 0 / 453,688; recording 25 / 451,328 (0.006%). Level ≥2: 72% | outputs/E0_v03 |
+| E1-v03 | 2026-09-30 | G4c | E1 under v0.3, 400 epochs | 0–11 | Does the elder story survive? | **Reversed.** Elder mode now starts at once (first L1 at epoch 0.6, was 78) and reaches every newcomer (L≥1 1.00, was 0.68). Mean level at 400: bootstrap 2.38, elder 3.96, mixed 4.20. Mixed leads elder by only 0.24 ± 0.16; adding the elder to a mixed group adds 0.00 ± 0.12. Still true: elder mode yields one distinct content per level, and 83% of elder-mode level-ups come from non-elder teachers | results/E1_v03.md |
+| E2-v03 | 2026-09-30 | G4c | E2 under v0.3, 66 runs | 4–24 per θ | Is θ = 0.4 still right? | **Yes.** Recording FP at 0.4: 4.4e-5 (upper bound 1.3e-4); the criterion now crosses at θ ≈ 0.35. Level ≥2 flat at 0.68–0.73 for θ 0.2–0.5; stall still between 0.5 and 0.6. **Reversed:** v0.2's early plateau was the trap, not contingency; development now rises until about epoch 200 | results/E2_v03.md |
+| E3-v03 | 2026-09-30 | G4c | E3 under v0.3, 200 epochs | 4–8 per point | Collective transition once the trap is gone? | **No.** φ at defaults 0.75 ± 0.04 (was 0.30); 91% of L1 minds reach L2 (was 36%). φ now has a sharp onset at ρ_c ≈ 0.31 (width ≈ 0.034), but the width is unchanged across N = 10 / 20 / 40, so it's a per-encounter threshold. The limit is now stranding (27.5% of minds have no same-level neighbour) | results/E3_v03.md |
+| E4-v03 | 2026-09-30 | G4c | E4 under v0.3 | 12 per arm | Autocatalysis once the trap is gone? | **Still no, on firmer ground.** The 1→2 hazard rises from ~0.1% to 8.7–11.5%. A same-mind hazard check (minds ending at level ≥5) falls with depth: 17.5 / 8.6 / 5.8 / 5.0% at k = 1–4; v0.2's rise at depth was selection. **Reversed:** generalize now beats none (level ≥3: 49 vs 15%); mean level rises with p_probe through 0.8. Probe success still falls with level | results/E4_v03.md |
+| E5-v03 | 2026-09-30 | G4c | E5 under v0.3 | 0–11 | Private language without the trap? | **Survives:** co-builder probe success is 3.7× [3.1, 4.3] that with strangers; level-ups 4.8× (was 12×, partly trap). Only 3–34% of minds sit on grown nodes. **Reversed:** fixed pairs now beat shuffled (mean level 3.18 vs 2.64; level ≥4 27.5% vs 7.5%), since a shuffled mind rarely meets its compatible partner. 13 of 120 pairs never bootstrap | results/E5_v03.md |
 
 ---
 
@@ -136,6 +142,20 @@ All five experiments were merged, with 217 tests passing. This state is tagged `
 ### D10 — 2026-09-29 — Spec v0.3: grown nodes get an exit *(delegated — for user review)*
 - **Change:** `activate_node` also adds a τ edge v → anchor. A grown node is still reached through the learned label, but a mind can walk back out, so growth adds territory instead of a trap.
 - **Plan (G4c):** re-run C0 and E0 to check calibration and controls under v0.3, then re-run E1–E5 with the same scripts and compare each result with v0.2. The v0.2 results stay in `results/` as the comparison baseline.
+
+### D11 — 2026-09-30 — G4c gate passed; state of the hypotheses under v0.3
+All re-runs are merged (218 tests pass). This state is tagged `v0.3-results`. Where the §14 hypotheses stand under v0.3:
+- **Sharp threshold (E3):** a sharp per-encounter threshold in reactivity (ρ_c ≈ 0.31), but **no collective phase transition**: the onset doesn't sharpen with N.
+- **Autocatalysis (E4):** **not supported.** Probing is necessary, and more of it helps, but each level is harder than the last, even for the same minds.
+- **Private languages (E5):** **supported,** and not a trap artifact. With stable partners, it makes fixed pairs outperform shuffled populations.
+- **Credulity trade-off (E2):** **supported with a twist.** Lowering θ adds false recognition, but it only speeds development early; it doesn't raise the final level. θ = 0.4 stays.
+- **Elder vs bootstrap (E1):** transmission is fast and reaches everyone, but gives no novelty (one content per level). Peer bootstrap produces the most diversity at levels 2–3. Mixed is marginally best.
+
+**Process notes:**
+- Round-2 agents cut seeds and grids to fit the budget (E1 12 seeds, E2 66 runs, E3 4–8 seeds, E4 a coarser p_probe grid, E5 12 seeds). Each write-up states its cuts.
+- The E1/E4/E5 comparison scripts read v0.2 raw outputs from agent worktrees. Every worktree's `outputs/` has been copied to `outputs/archive/<agent>__<commit subject>` (210 MB, gitignored) so they survive worktree cleanup. The comparison scripts' paths may need pointing at the archive.
+- A safety check flagged an `rm -rf` on the round-2 E2 agent's own partial outputs. It was denied and never ran; nothing was lost.
+- **Recurring shared-code requests** (still deferred): per-epoch mind levels exposed by the runner (E4 and E5 had to copy the run loop); per-seed outputs saved with result tags; C and level in `WindowStat`.
 
 ---
 
