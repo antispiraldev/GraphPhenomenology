@@ -1,12 +1,15 @@
 """E3 figures from the sweep outputs (run after the sweeps in results/E3.md).
 
-    uv run python -m experiments.E3_plot
+    uv run python -m experiments.E3_plot [--tag-prefix E3] [--out-prefix results/E3] [--note TEXT]
 
-Writes results/E3_sweeps.png, results/E3_size.png and results/E3_summary.json.
+Writes <out-prefix>_sweeps.png, <out-prefix>_size.png and <out-prefix>_summary.json.
+Sweep tags are looked up as <tag-prefix>_rho_coarse etc.; missing tags are skipped
+(so a sweep run without its refinement still plots).
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -22,11 +25,16 @@ BLUE, ORANGE, AQUA = "#2a78d6", "#eb6834", "#1baf7a"
 INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 
 SWEEPS = {
-    "rho": (["E3_rho_coarse", "E3_rho_fine"], "reactivity ρ", False),
-    "p_contact": (["E3_p_coarse"], "contact probability p_contact", [0.02, 0.05, 0.1, 0.2, 0.4]),
-    "q_edge": (["E3_q_coarse", "E3_q_fine"], "initial edge density q_edge", [0.03, 0.05, 0.08, 0.12, 0.2]),
+    "rho": (["rho_coarse", "rho_fine"], "reactivity ρ", False),
+    "p_contact": (["p_coarse"], "contact probability p_contact", [0.02, 0.05, 0.1, 0.2, 0.4]),
+    "q_edge": (["q_coarse", "q_fine"], "initial edge density q_edge", [0.03, 0.05, 0.08, 0.12, 0.2]),
 }
-SIZES = [(10, "E3_rho_N10", ORANGE), (20, None, BLUE), (40, "E3_rho_N40", AQUA)]
+SIZES = [(10, "rho_N10", ORANGE), (20, None, BLUE), (40, "rho_N40", AQUA)]
+
+
+def existing(prefix: str, names: list[str]) -> list[str]:
+    tags = [f"{prefix}_{n}" for n in names]
+    return [t for t in tags if (Path("outputs") / t / "sweep.json").exists()]
 
 
 def style(ax, xlabel: str, ylabel: str, log: bool, ticks: list[float] | None = None) -> None:
@@ -47,10 +55,16 @@ def style(ax, xlabel: str, ylabel: str, log: bool, ticks: list[float] | None = N
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tag-prefix", default="E3")
+    ap.add_argument("--out-prefix", default="results/E3")
+    ap.add_argument("--note", default="20 minds, 200 epochs, 8 seeds/point")
+    args = ap.parse_args()
     plt.rcParams.update({"font.size": 10, "axes.titlesize": 11})
     summary = {}
     fig, axes = plt.subplots(2, 3, figsize=(13, 7.5), sharex="col")
     for col, (axis, (tags, label, log)) in enumerate(SWEEPS.items()):
+        tags = existing(args.tag_prefix, tags)
         rows = summarize(tags, axis, with_isolation=(axis == "p_contact"))
         summary[axis] = rows
         x = [r["x"] for r in rows]
@@ -76,14 +90,13 @@ def main() -> None:
         ax.plot(x, [r["ge1_var"] for r in rows], color=ORANGE, lw=2, marker="s", ms=5, label="level ≥ 1")
         style(ax, label, "variance across seeds" if col == 0 else "", bool(log), log or None)
         ax.legend(frameon=False, fontsize=8.5)
-    fig.suptitle("E3: development vs. coupling parameters (20 minds, 200 epochs, 8 seeds/point; dotted = default)",
-                 color=INK)
+    fig.suptitle(f"E3: development vs. coupling parameters ({args.note}; dotted = default)", color=INK)
     fig.tight_layout()
-    fig.savefig("results/E3_sweeps.png", dpi=130)
+    fig.savefig(f"{args.out_prefix}_sweeps.png", dpi=130)
 
     fig, axes = plt.subplots(1, 3, figsize=(13, 4))
     for n, tag, color in SIZES:
-        tags = [tag] if tag else ["E3_rho_coarse", "E3_rho_fine"]
+        tags = existing(args.tag_prefix, [tag] if tag else ["rho_coarse", "rho_fine"])
         rows = [r for r in summarize(tags, "rho") if r["x"] <= 0.6]
         summary[f"rho_N{n}"] = rows
         x = [r["x"] for r in rows]
@@ -101,8 +114,8 @@ def main() -> None:
     axes[1].set_ylim(-0.02, 1.02)
     fig.suptitle("E3 size check on ρ (mean contact degree held ≈ 3.8: p_contact = 0.42 / 0.2 / 0.1)", color=INK)
     fig.tight_layout()
-    fig.savefig("results/E3_size.png", dpi=130)
-    Path("results/E3_summary.json").write_text(json.dumps(summary, indent=1))
+    fig.savefig(f"{args.out_prefix}_size.png", dpi=130)
+    Path(f"{args.out_prefix}_summary.json").write_text(json.dumps(summary, indent=1))
 
 
 if __name__ == "__main__":
