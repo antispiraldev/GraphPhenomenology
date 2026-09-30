@@ -1,9 +1,10 @@
 """E1 figures and summary tables from outputs/<tag>/E1.json.
 
     uv run python -m experiments.E1_plot --tag E1
+    uv run python -m experiments.E1_plot --tag E1_v03 --prefix E1_v03   # spec v0.3 re-run
 
-Writes results/E1_development.png, results/E1_diversity.png,
-results/E1_sources.png and prints markdown tables (also saved to
+Writes results/<prefix>_development.png, results/<prefix>_diversity.png,
+results/<prefix>_sources.png (prefix defaults to E1) and prints markdown tables (also saved to
 outputs/<tag>/summary.md). Uncertainty is mean ± standard error across seeds.
 """
 
@@ -213,15 +214,16 @@ def main() -> None:
     ap.add_argument("--tag", default="E1")
     ap.add_argument("--outputs", default="outputs")
     ap.add_argument("--results", default="results")
+    ap.add_argument("--prefix", default="E1", help="figure filename prefix, e.g. E1_v03")
     args = ap.parse_args()
     data = json.loads((Path(args.outputs) / args.tag / "E1.json").read_text())
     results = data["results"]
     epochs = data["meta"]["config"]["epochs"]
     res_dir = Path(args.results)
     res_dir.mkdir(exist_ok=True)
-    fig_development(results, epochs, res_dir / "E1_development.png")
-    fig_diversity(results, res_dir / "E1_diversity.png")
-    fig_sources(results, res_dir / "E1_sources.png")
+    fig_development(results, epochs, res_dir / f"{args.prefix}_development.png")
+    fig_diversity(results, res_dir / f"{args.prefix}_diversity.png")
+    fig_sources(results, res_dir / f"{args.prefix}_sources.png")
     md = tables(results, epochs)
     (Path(args.outputs) / args.tag / "summary.md").write_text(md)
     print(md)
