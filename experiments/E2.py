@@ -3,6 +3,8 @@
     uv run python -m experiments.E2 all        # both sweeps, then analysis (~25 min on 3 workers)
     uv run python -m experiments.E2 run        # sweeps only
     uv run python -m experiments.E2 analyze    # tables + figures from outputs/E2_*
+    uv run python -m experiments.E2 all --design v03   # spec v0.3 re-run (G4c): 2 workers,
+                                                       # outputs/E2v03_*, results/E2_v03_*.png
 
 Two sweeps of experiments/E2.yaml through experiments/sweep.py, 3 workers each:
   E2_coarse: theta in COARSE, seeds 0-9;
@@ -35,16 +37,30 @@ SPEED_EPOCH = 25  # early-development snapshot
 OUT = Path("outputs")
 RESULTS = Path("results")
 
+# Designs: list of (sweep tag, thetas, seeds), diagnostic seeds, workers, file prefix.
+# "v02" is the G4b design (results/E2.md). "v03" is the G4c re-run under spec v0.3,
+# cut to ~30 min on 2 workers: a coarser grid, and seeds concentrated at θ = 0.4.
+DESIGNS = {
+    "v02": {"sweeps": [("E2_coarse", COARSE, COARSE_SEEDS), ("E2_dense", DENSE, DENSE_SEEDS)],
+            "diag_seeds": 6, "workers": WORKERS, "prefix": "E2"},
+    "v03": {"sweeps": [("E2v03_d40", [0.4], 24), ("E2v03_d35", [0.35, 0.45], 8),
+                       ("E2v03_coarse", [0.0, 0.2, 0.5, 0.6, 0.7], 4), ("E2v03_d30", [0.3], 6)],
+            "diag_seeds": 2, "workers": 2, "prefix": "E2v03", "fig_prefix": "E2_v03"},
+}
 
-def run_sweeps() -> None:
+
+def run_sweeps(design: dict, skip_existing: bool = False) -> None:
     from experiments.sweep import sweep
 
     base = Config.from_yaml(CONFIG)
-    sweep(base, COARSE_SEEDS, [{"theta": t} for t in COARSE], "E2_coarse", keep_runs=True, workers=WORKERS)
-    sweep(base, DENSE_SEEDS, [{"theta": t} for t in DENSE], "E2_dense", keep_runs=True, workers=WORKERS)
+    for tag, thetas, seeds in design["sweeps"]:
+        if skip_existing and (OUT / tag / "sweep.json").exists():
+            continue
+        sweep(base, seeds, [{"theta": t} for t in thetas], tag, keep_runs=True, workers=design["workers"])
     from experiments.E2_diag import diagnose
 
-    diagnose(seeds=6, epochs=base.epochs)   # outputs/E2_diag.json (~1 min)
+    diagnose(seeds=design["diag_seeds"], epochs=base.epochs, workers=design["workers"],
+             out_path=OUT / f"{design['prefix']}_diag.json")   # ~1 min
 
 
 # ---------------------------------------------------------------- statistics
@@ -94,9 +110,9 @@ def mean_ci(x: list[float]) -> tuple[float, float]:
 
 # ---------------------------------------------------------------- analysis
 
-def load() -> dict[float, list[dict]]:
+def load(tags=("E2_coarse", "E2_dense")) -> dict[float, list[dict]]:
     by_theta: dict[float, list[dict]] = defaultdict(list)
-    for tag in ("E2_coarse", "E2_dense"):
+    for tag in tags:
         data = json.loads((OUT / tag / "sweep.json").read_text())
         for r in data["results"]:
             run_dir = OUT / tag / f"theta{r['point']['theta']}" / f"s{r['seed']}"
@@ -170,17 +186,17 @@ def print_table(table: list[dict]) -> None:
               f"| {r['epoch_mean_level_1'] if r['epoch_mean_level_1'] is not None else '—'} |")
 
 
-def analyze() -> None:
+def analyze(design: dict) -> None:
     from experiments.E2_plots import plot_all
 
-    table = summarize(load())
+    table = summarize(load([tag for tag, _, _ in design["sweeps"]]))
     print_table(table)
     cross = crossing(table)
     print("recording criterion crossing:", cross)
-    out = OUT / "E2_summary.json"
+    out = OUT / f"{design['prefix']}_summary.json"
     out.write_text(json.dumps({"table": table, "crossing": cross}, indent=1))
     print(f"wrote {out}")
-    diag_path = OUT / "E2_diag.json"
+    diag_path = OUT / f"{design['prefix']}_diag.json"
     if diag_path.exists():
         diag = json.loads(diag_path.read_text())
         print(f"diagnostic (θ = 0 runs, {diag['seeds']} seeds): share of would-be recognitions with C >= θ")
@@ -195,17 +211,20 @@ def analyze() -> None:
             v = diag["by_kind"][k]
             print(f"{k}: n = {v['n']}, level-0 share {v['frac_level0']:.2f}")
     RESULTS.mkdir(exist_ok=True)
-    plot_all(table, CRITERION, RESULTS)
+    plot_all(table, CRITERION, RESULTS, prefix=design.get("fig_prefix", "E2"))
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("step", choices=("run", "analyze", "all"))
+    ap.add_argument("--design", choices=tuple(DESIGNS), default="v02")
+    ap.add_argument("--skip-existing", action="store_true", help="skip sweeps whose sweep.json exists")
     args = ap.parse_args()
+    design = DESIGNS[args.design]
     if args.step in ("run", "all"):
-        run_sweeps()
+        run_sweeps(design, args.skip_existing)
     if args.step in ("analyze", "all"):
-        analyze()
+        analyze(design)
 
 
 if __name__ == "__main__":
