@@ -2,6 +2,8 @@
 and the figures results/E5_*.png.
 
     uv run python -m experiments.E5_analyze
+    uv run python -m experiments.E5_analyze --prefix E5_v03   # -> results/E5_v03_*.png
+    uv run python -m experiments.E5_analyze --in outputs/E5_v02 --prefix X  # another run directory
 
 Uncertainty is a cluster bootstrap over seeds (each seed is one population);
 intervals are 95% percentile intervals from 2000 resamples.
@@ -9,6 +11,7 @@ intervals are 95% percentile intervals from 2000 resamples.
 
 from __future__ import annotations
 
+import argparse
 import json
 from collections import defaultdict
 from pathlib import Path
@@ -27,10 +30,12 @@ COLORS = {"pairs": "#2a78d6", "shuffled": "#eb6834", "er02": "#1baf7a"}
 CLASSES = ["cobuilt_top", "past", "stranger"]
 RESULTS = Path("results")
 B = 2000
+PREFIX = "E5"   # figure file prefix; set by --prefix
+IN = OUT        # run directory (summary.json is written here too); set by --in
 
 
 def load() -> dict[str, list[dict]]:
-    return {c: [json.loads(p.read_text()) for p in sorted((OUT / c).glob("s*.json"),
+    return {c: [json.loads(p.read_text()) for p in sorted((IN / c).glob("s*.json"),
                                                             key=lambda p: int(p.stem[1:]))]
             for c in CONDS}
 
@@ -111,6 +116,12 @@ def standardized_ratio(tables: list[dict], a: str, b: str, col_n: int, col_k: in
 # ---- main --------------------------------------------------------------------
 
 def main() -> None:
+    global PREFIX, IN
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--prefix", default="E5", help="figure file prefix in results/")
+    ap.add_argument("--in", dest="indir", default=str(OUT), help="directory holding <condition>/s*.json")
+    args = ap.parse_known_args()[0]
+    PREFIX, IN = args.prefix, Path(args.indir)
     rng = np.random.default_rng(0)
     data = load()
     S: dict = {"n_seeds": {c: len(v) for c, v in data.items()}}
@@ -244,7 +255,7 @@ def main() -> None:
         ov[c] = per
     S["record_overlap"] = ov
 
-    (OUT / "summary.json").write_text(json.dumps(S, indent=1, default=float))
+    (IN / "summary.json").write_text(json.dumps(S, indent=1, default=float))
     figures(data, S)
     print(json.dumps(S, indent=1, default=float))
 
@@ -266,7 +277,7 @@ def figures(data, S) -> None:
                      va="center", fontsize=9, color="#333333")
     ax1.set_xlabel("Epoch")
     ax1.set_ylabel("Mean level of the 20 minds")
-    ax1.set_title("Mean level over time (band: 95% CI over 30 seeds)", fontsize=11)
+    ax1.set_title(f"Mean level over time (band: 95% CI over {len(data[CONDS[0]])} seeds)", fontsize=11)
     ax1.set_xlim(0, len(m) * 1.22)
     ax1.grid(axis="y", color="#e5e5e5", lw=0.8)
     ax1.legend(frameon=False, loc="upper left")
@@ -276,14 +287,14 @@ def figures(data, S) -> None:
         h = h / h.sum()
         ks = np.arange(len(h))
         ax2.bar(ks + (n - 1) * width, h, width=width - 0.03, color=COLORS[c], label=NAMES[c])
-    ax2.set_xlabel("Final level (epoch 500)")
+    ax2.set_xlabel(f"Final level (epoch {len(data[CONDS[0]][0]['rows'])})")
     ax2.set_ylabel("Share of minds")
-    ax2.set_title("Final level distribution (600 minds per condition)", fontsize=11)
+    ax2.set_title(f"Final level distribution ({20 * len(data[CONDS[0]])} minds per condition)", fontsize=11)
     ax2.set_xticks(range(11))
     ax2.grid(axis="y", color="#e5e5e5", lw=0.8)
     ax2.legend(frameon=False)
     fig.tight_layout()
-    fig.savefig(RESULTS / "E5_levels.png", dpi=150)
+    fig.savefig(RESULTS / f"{PREFIX}_levels.png", dpi=150)
     plt.close(fig)
 
     # Figure 2: key test — per-attempt probe success and per-encounter level-up, by partner, per level
@@ -325,7 +336,7 @@ def figures(data, S) -> None:
     fig.text(0.5, -0.01, "Points with fewer than 200 attempts/encounters are omitted. Bars: 95% CI, bootstrap over seeds.",
              ha="center", fontsize=9, color="#555555")
     fig.tight_layout()
-    fig.savefig(RESULTS / "E5_partner_test.png", dpi=150, bbox_inches="tight")
+    fig.savefig(RESULTS / f"{PREFIX}_partner_test.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
 
 
