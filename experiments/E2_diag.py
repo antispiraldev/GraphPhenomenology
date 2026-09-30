@@ -57,8 +57,10 @@ def _job(args: tuple[int, int]) -> list[tuple[str, int, float]]:
     return log
 
 
-def diagnose(seeds: int = 6, epochs: int = 300) -> dict:
-    with ProcessPoolExecutor(max_workers=3) as ex:
+def diagnose(seeds: int = 6, epochs: int = 300, workers: int = 3,
+             out_path: Path | str = "outputs/E2_diag.json") -> dict:
+    out_path = Path(out_path)
+    with ProcessPoolExecutor(max_workers=workers) as ex:
         logs = [x for part in ex.map(_job, [(s, epochs) for s in range(seeds)]) for x in part]
     out: dict = {"seeds": seeds, "epochs": epochs, "by_kind": {}}
     for kind in ("mind", "recording"):
@@ -72,8 +74,8 @@ def diagnose(seeds: int = 6, epochs: int = 300) -> dict:
             "survival_level_ge1": {t: float((c[lv >= 1] >= t).mean()) for t in THETAS} if (lv >= 1).any() else {},
             "frac_level0": float((lv == 0).mean()),
         }
-    Path("outputs").mkdir(exist_ok=True)
-    Path("outputs/E2_diag.json").write_text(json.dumps(out, indent=1))
+    out_path.parent.mkdir(exist_ok=True)
+    out_path.write_text(json.dumps(out, indent=1))
     return out
 
 

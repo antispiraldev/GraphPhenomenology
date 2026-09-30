@@ -84,8 +84,9 @@ def plot_tradeoff(table, criterion, path: Path) -> None:
                 color=INK2, fontsize=8, va="top")
     fig.suptitle("E2: credulity trade-off — each point is one θ (20 minds + 12 controls, 300 epochs)",
                  x=0.01, ha="left", color=INK, fontsize=12)
+    seeds = ", ".join(f"{r['theta']:g}: {r['seeds']}" for r in table)
     fig.text(0.01, -0.03, "Filled: observed rate with exact 95% CI. Hollow with arrow: none observed, drawn at the "
-             "95% upper bound. Vertical bars: 95% CI over seeds (10 per θ; 32 for θ = 0.3–0.45).",
+             f"95% upper bound. Vertical bars: 95% CI over seeds (seeds per θ — {seeds}).",
              fontsize=8, color=INK2)
     fig.tight_layout()
     fig.savefig(path, bbox_inches="tight")
@@ -164,7 +165,72 @@ def plot_curves(table, path: Path) -> None:
     plt.close(fig)
 
 
-def plot_all(table, criterion, out: Path) -> None:
-    plot_tradeoff(table, criterion, out / "E2_tradeoff.png")
-    plot_by_theta(table, criterion, out / "E2_by_theta.png")
-    plot_curves(table, out / "E2_curves.png")
+# v0.2 baseline (results/E2.md, tables 3.1-3.2; the v0.2 outputs were not kept):
+# theta -> (recording k, recording windows, level>=1, level>=2, mean level @ epoch 25)
+V02 = {
+    0.0: (1541, 25208, 0.84, 0.30, 1.18), 0.1: (744, 27840, 0.83, 0.28, 1.18),
+    0.2: (172, 27972, 0.81, 0.30, 1.20), 0.25: (76, 28076, 0.81, 0.27, 1.19),
+    0.3: (67, 87884, 0.81, 0.25, 1.14), 0.35: (29, 87276, 0.84, 0.31, 1.18),
+    0.4: (8, 88540, 0.84, 0.23, 1.02), 0.45: (1, 85016, 0.82, 0.20, 0.80),
+    0.5: (0, 25407, 0.77, 0.16, 0.43), 0.6: (0, 25407, 0.29, 0.06, 0.05),
+    0.7: (0, 25407, 0.01, 0.0, 0.0), 0.8: (0, 25407, 0.0, 0.0, 0.0),
+}  # windows at 0.5-0.8 are the pooled 101,628 split evenly (only zero counts matter there)
+
+
+def plot_compare(table, criterion, path: Path) -> None:
+    """v0.2 (grey) against v0.3 (blue): recording rate, level >= 2, early speed, by θ."""
+    from experiments.E2 import clopper_pearson
+
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4.4), dpi=150)
+    th2 = sorted(V02)
+    th3 = [r["theta"] for r in table]
+    ax = axes[0]
+    for ths, pts, color, name in (
+        (th2, [(V02[t][0], V02[t][1]) for t in th2], MUTED, "v0.2"),
+        (th3, [(r["recording"]["k"], r["recording"]["n"]) for r in table], BLUE, "v0.3"),
+    ):
+        nz = [(t, k / n) for t, (k, n) in zip(ths, pts) if k > 0]
+        ax.plot(*zip(*nz), "o-", color=color, lw=2, ms=6, mec="white", label=name)
+        for t, (k, n) in zip(ths, pts):
+            lo, hi = clopper_pearson(k, n)
+            if k > 0:
+                ax.plot([t, t], [lo, hi], color=color, lw=1, alpha=0.7)
+            else:
+                ax.plot(t, hi, "v", ms=7, mfc="white", mec=color, mew=1.5)
+    ax.axhline(criterion, color=ORANGE, ls="--", lw=1.5)
+    ax.text(0.02, criterion * 1.3, "criterion 1 in 5,000", color=INK2, fontsize=8)
+    ax.set_yscale("log")
+    ax.set_ylim(1e-5, 0.3)
+    ax.set_ylabel("Recording false-positive rate (per window)")
+    ax.set_title("Fooled by recordings", color=INK, fontsize=11, loc="left")
+    for ax, key, col, label, title in ((axes[1], "frac_ge2", 3, "Minds at level ≥ 2 at epoch 300",
+                                        "Final development"),
+                                       (axes[2], "mean_level_e25", 4, "Mean mind level at epoch 25",
+                                        "Early speed")):
+        ax.plot(th2, [V02[t][col] for t in th2], "o-", color=MUTED, lw=2, ms=6, mec="white", label="v0.2")
+        m = np.array([r[key][0] for r in table])
+        h = np.array([r[key][1] for r in table])
+        ax.fill_between(th3, m - h, m + h, color=BLUE, alpha=0.15, lw=0)
+        ax.plot(th3, m, "o-", color=BLUE, lw=2, ms=6, mec="white", label="v0.3")
+        ax.set_ylabel(label)
+        ax.set_ylim(0, None)
+        ax.set_title(title, color=INK, fontsize=11, loc="left")
+    for ax in axes:
+        ax.axvline(0.4, color=MUTED, lw=1, ls=":")
+        ax.set_xlabel("Contingency threshold θ")
+        _style(ax)
+    axes[0].legend(frameon=False, fontsize=9, loc="lower left")
+    fig.suptitle("E2: spec v0.2 (grey) vs v0.3 (blue). Bars/bands: 95% CI (v0.3 band over seeds); "
+                 "▽ = none observed, 95% upper bound; dotted line = default θ 0.4",
+                 x=0.01, ha="left", color=INK, fontsize=11)
+    fig.tight_layout()
+    fig.savefig(path, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_all(table, criterion, out: Path, prefix: str = "E2") -> None:
+    plot_tradeoff(table, criterion, out / f"{prefix}_tradeoff.png")
+    plot_by_theta(table, criterion, out / f"{prefix}_by_theta.png")
+    plot_curves(table, out / f"{prefix}_curves.png")
+    if prefix != "E2":
+        plot_compare(table, criterion, out / f"{prefix}_vs_v02.png")
