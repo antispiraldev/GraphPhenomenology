@@ -157,6 +157,16 @@ All re-runs are merged (218 tests pass). This state is tagged `v0.3-results`. Wh
 - A safety check flagged an `rm -rf` on the round-2 E2 agent's own partial outputs. It was denied and never ran; nothing was lost.
 - **Recurring shared-code requests** (still deferred): per-epoch mind levels exposed by the runner (E4 and E5 had to copy the run loop); per-seed outputs saved with result tags; C and level in `WindowStat`.
 
+### D12 — 2026-10-01 — G5 synthesis prepared; awaiting user approval
+- `results/SYNTHESIS.md` collects the project in one place: what was built, how the spec changed (D1, D7, D8, D10), the verdict on each §14 hypothesis, the other results, limitations, and the delegated decisions for review.
+- `results/G5_overview.png` (from `experiments/G5_overview.py`) shows one v0.3 result per experiment. It reads the archived G4c outputs in `outputs/archive/` and `outputs/E0_v03/`; every plotted number matches the corresponding `results/E*_v03.md`.
+- No new runs. The hypothesis verdicts are those of D11, with one wording refinement: for E2, lowering θ raises false recognition and early speed together, but not final development.
+- Housekeeping: a stray `[tool.uv.workspace]` entry (from initializing the gitignored video explainer folder) was reverted from `pyproject.toml` and `uv.lock`; it was never committed.
+- G5 is the second user-approval gate (D3). The synthesis is left uncommitted until the user signs off.
+
+### D13 — 2026-10-04 — G5 gate passed (user approved)
+The user approved the G5 synthesis (`results/SYNTHESIS.md`, `results/G5_overview.png`). That approval also confirms the two delegated decisions, D8 (θ = 0.4 and the recording rate criterion) and D10 (spec v0.3: grown nodes get a τ exit). All segments in D3 are complete.
+
 ---
 
 ## Glossary
@@ -179,3 +189,6 @@ All re-runs are merged (218 tests pass). This state is tagged `v0.3-results`. Wh
 | Controls: object / recording / mirror | Non-minds that should never trigger recognition | §8 |
 | Private language | Interlocking probes between partners who bootstrapped together | §10 E5 |
 | Repeat-partner fraction | Share of level-ups with a partner the agent has leveled up with before | §10 |
+| Stranding | A mind with no contact-graph neighbour at its own level, so it cannot bootstrap until a neighbour reaches its level; 27.5% of minds at defaults (E3 v0.3) | results/E3_v03.md |
+| Fixed-cohort hazard | Per-step level-up hazard measured on the same set of minds (those that finished at level ≥ K), so between-mind selection can't create a trend | results/E4_v03.md |
+| Co-builder | The partner a mind recognized when it wrote its current top record | results/E5.md |
