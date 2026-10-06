@@ -60,3 +60,7 @@ Tags: `v0.2-results` (before the grown-node fix) and `v0.3-results` (current res
 ## History
 
 The work ran in gated segments, logged in [`NOTEBOOK.md`](NOTEBOOK.md). One design error shaped the first round of results: grown vertices had no way out, so developed minds got stuck. Spec v0.3 fixed this (decision D10). Every experiment was then re-run, and several first-round conclusions reversed.
+
+## License
+
+MIT. See [`LICENSE`](LICENSE).
