@@ -167,6 +167,9 @@ All re-runs are merged (218 tests pass). This state is tagged `v0.3-results`. Wh
 ### D13 — 2026-10-04 — G5 gate passed (user approved)
 The user approved the G5 synthesis (`results/SYNTHESIS.md`, `results/G5_overview.png`). That approval also confirms the two delegated decisions, D8 (θ = 0.4 and the recording rate criterion) and D10 (spec v0.3: grown nodes get a τ exit). All segments in D3 are complete.
 
+### D14 — 2026-10-06 — Commit identity rewritten for publication
+Before the first push to the public GitHub repository, every commit's author and committer were rewritten to `AD <192101943+antispiraldev@users.noreply.github.com>`, matching the user's other public projects; this repository's local git identity now uses the same values. File contents are unchanged, but every commit hash changed. In the text, the old hashes 42bda23 and aebd162 now read 7d78dbc and 63f4292. The tags `v0.2-results` and `v0.3-results` were moved to the rewritten commits. The agent worktree branches were not rewritten and are local only.
+
 ---
 
 ## Glossary

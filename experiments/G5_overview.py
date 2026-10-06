@@ -3,7 +3,7 @@
     uv run python -m experiments.G5_overview
 
 Reads the saved v0.3 outputs (outputs/ is not committed; the G4c worktree outputs were
-copied to outputs/archive/ at commit 42bda23) and writes results/G5_overview.png.
+copied to outputs/archive/ at commit 7d78dbc) and writes results/G5_overview.png.
 Every number plotted is also reported in the corresponding results/E*_v03.md.
 """
 

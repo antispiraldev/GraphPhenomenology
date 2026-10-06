@@ -80,7 +80,7 @@ A further point is methodological. The v0.2 → v0.3 episode showed how strongly
 
 - Tags: `v0.2-results` (spec v0.2), `v0.3-results` (spec v0.3).
 - Each `results/E*_v03.md` lists the exact commands.
-- Raw outputs are not committed (`outputs/` is gitignored). The G4c worktree outputs were copied into `outputs/archive/` before the worktrees were removed (commit 42bda23). `experiments/G5_overview.py` reads from there and from `outputs/E0_v03/`.
+- Raw outputs are not committed (`outputs/` is gitignored). The G4c worktree outputs were copied into `outputs/archive/` before the worktrees were removed (commit 7d78dbc). `experiments/G5_overview.py` reads from there and from `outputs/E0_v03/`.
 
 ## 8. Decisions for the reviewer
 
