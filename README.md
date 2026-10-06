@@ -6,6 +6,13 @@ The idea comes from Fichte's "summons", Hegel's account of mutual recognition, H
 
 ![One result per experiment](results/G5_overview.png)
 
+## Explainers
+
+For readers new to the idea:
+
+- [**Minds That Meet** (video, 10 min)](docs/minds-that-meet.mp4): a narrated, animated walk-through of the background, the model in graph terms, and the results.
+- [**Primer** (PDF, 6 pages)](docs/minds-that-meet-primer.pdf) and [audio version (13 min)](docs/minds-that-meet-primer.mp3): the philosophical and developmental background, with a reading list.
+
 ## The model in brief
 
 - **A mind** is a labelled directed graph: vertices are states, and edges are moves a₁…a₃, their complements ā₁…ā₃, or the solo move τ. Each mind starts with 16 vertices and random edges.
@@ -53,6 +60,7 @@ Runs are deterministic given a seed. Outputs go to `outputs/`, which is not comm
 | `analysis/` | Metrics and the product-graph analysis |
 | `experiments/` | Configs and scripts for C0 and E0–E5, sweeps, plots |
 | `results/` | Write-ups and figures |
+| `docs/` | Explainer video and primer (PDF and audio) |
 | `NOTEBOOK.md` | Lab notebook: every experiment, decision and coined term |
 
 Tags: `v0.2-results` (before the grown-node fix) and `v0.3-results` (current results).
